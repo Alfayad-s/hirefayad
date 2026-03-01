@@ -95,7 +95,7 @@ async function seed() {
   const servicesCol = await getServicesCollection();
   const existingServices = await servicesCol.countDocuments();
   if (existingServices === 0) {
-    await servicesCol.insertMany(services);
+    await servicesCol.insertMany(services as unknown as Parameters<typeof servicesCol.insertMany>[0]);
     console.log(`Inserted ${services.length} services`);
   } else {
     console.log("Services already exist, skipping");
@@ -105,7 +105,7 @@ async function seed() {
   for (const coupon of coupons) {
     const exists = await couponsCol.findOne({ code: coupon.code });
     if (!exists) {
-      await couponsCol.insertOne({ ...coupon });
+      await couponsCol.insertOne({ ...coupon } as unknown as Parameters<typeof couponsCol.insertOne>[0]);
       console.log(`Inserted coupon: ${coupon.code}`);
     }
   }

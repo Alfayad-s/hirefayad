@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getCouponsCollection, toJson } from "@/lib/db";
 import { ObjectId } from "mongodb";
 import { AdminCouponForm } from "@/components/admin/admin-coupon-form";
+import type { Coupon } from "@/types";
 
 type Props = { params: Promise<{ locale: string; id: string }> };
 
@@ -12,10 +13,7 @@ export default async function EditCouponPage({ params }: Props) {
   const doc = await col.findOne({ _id: new ObjectId(id) });
   if (!doc) notFound();
   const coupon = toJson(doc);
-  const expiryStr =
-    typeof coupon.expiryDate === "string"
-      ? coupon.expiryDate.slice(0, 16)
-      : new Date(coupon.expiryDate).toISOString().slice(0, 16);
+  const expiryStr = new Date(coupon.expiryDate).toISOString().slice(0, 16);
 
   return (
     <div>
@@ -23,10 +21,12 @@ export default async function EditCouponPage({ params }: Props) {
       <p className="mt-1 text-muted-foreground">{coupon.code}</p>
       <AdminCouponForm
         locale={locale}
-        coupon={{
-          ...coupon,
-          expiryDate: expiryStr,
-        }}
+        coupon={
+          {
+            ...coupon,
+            expiryDate: expiryStr,
+          } as unknown as Omit<Coupon, "usedCount" | "createdAt"> & { expiryDate: string }
+        }
       />
     </div>
   );

@@ -21,10 +21,11 @@ export function GridBackground() {
 
     const target = el.parentElement ?? document;
 
-    function handleMove(e: MouseEvent) {
+    function handleMove(e: Event) {
+      const me = e as MouseEvent;
       const rect = el!.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const x = me.clientX - rect.left;
+      const y = me.clientY - rect.top;
       targetRef.current = { x, y };
       if (!currentRef.current) {
         currentRef.current = { x, y };

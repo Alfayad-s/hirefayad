@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getUsersCollection, toJson } from "@/lib/db";
 import { signupSchema } from "@/lib/validations/auth";
-import type { User } from "@/types";
 
 export async function POST(request: Request) {
   try {
@@ -37,7 +36,7 @@ export async function POST(request: Request) {
       password: hashedPassword,
       role,
       createdAt: new Date(),
-    });
+    } as Parameters<typeof users.insertOne>[0]);
 
     const user = await users.findOne({ _id: insertedId });
     if (!user) {

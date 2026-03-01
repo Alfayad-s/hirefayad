@@ -21,7 +21,7 @@ function validateEnv(): Env {
 
   if (!parsed.success) {
     console.error("Invalid environment variables:", parsed.error.flatten().fieldErrors);
-    return parsed.data as Env;
+    throw new Error("Invalid environment variables");
   }
 
   return parsed.data;
