@@ -19,7 +19,9 @@ export function GridBackground() {
     const el = ref.current;
     if (!el) return;
 
-    const target = el.parentElement ?? document;
+    // Use document so the spotlight follows the cursor across the whole page,
+    // even when GridBackground is inside a narrow container (e.g. quote page).
+    const target = document;
 
     function handleMove(e: Event) {
       const me = e as MouseEvent;
@@ -33,8 +35,12 @@ export function GridBackground() {
       }
     }
 
-    function handleLeave() {
-      targetRef.current = null;
+    function handleLeave(e: Event) {
+      const ev = e as MouseEvent;
+      // Clear when cursor leaves the viewport (e.g. to browser chrome or another screen)
+      if (ev.relatedTarget == null || !document.contains(ev.relatedTarget as Node)) {
+        targetRef.current = null;
+      }
     }
 
     function tick() {
@@ -74,12 +80,12 @@ export function GridBackground() {
 
     rafRef.current = requestAnimationFrame(tick);
     target.addEventListener("mousemove", handleMove, { passive: true });
-    target.addEventListener("mouseleave", handleLeave);
+    target.addEventListener("mouseout", handleLeave);
 
     return () => {
       cancelAnimationFrame(rafRef.current);
       target.removeEventListener("mousemove", handleMove);
-      target.removeEventListener("mouseleave", handleLeave);
+      target.removeEventListener("mouseout", handleLeave);
     };
   }, []);
 

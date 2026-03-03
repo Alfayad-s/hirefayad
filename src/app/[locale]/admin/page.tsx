@@ -25,10 +25,12 @@ export default async function AdminDashboardPage({ params }: Props) {
   ];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-      <p className="mt-1 text-muted-foreground">Overview of your funnel.</p>
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="mt-1 text-muted-foreground">Overview of your funnel.</p>
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
         {cards.map((card) => (
           <Link
             key={card.href}

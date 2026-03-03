@@ -53,7 +53,7 @@ export function CouponSection({ session = null }: Props) {
 
   if (!session?.user) {
     return (
-      <section id="coupon" className="min-h-full snap-start snap-always flex flex-col justify-center mx-auto max-w-6xl px-4 py-16">
+      <section id="coupon" className="min-h-full flex flex-col justify-center mx-auto max-w-6xl px-4 py-16">
         <Card className="mx-auto max-w-md border-2">
           <CardHeader>
             <CardTitle>{t("title")}</CardTitle>
@@ -70,7 +70,7 @@ export function CouponSection({ session = null }: Props) {
   }
 
   return (
-    <section id="coupon" className="min-h-full snap-start snap-always flex flex-col justify-center mx-auto max-w-6xl px-4 py-16">
+    <section id="coupon" className="min-h-full flex flex-col justify-center mx-auto max-w-6xl px-4 py-16">
       <Card className="mx-auto max-w-md border-2">
         <CardHeader>
           <CardTitle>{t("title")}</CardTitle>

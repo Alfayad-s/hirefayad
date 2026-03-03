@@ -1,5 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from "mongodb";
-import type { User, Service, Coupon } from "@/types";
+import type { User, Service, Coupon, Order } from "@/types";
 
 type WithObjectId<T> = Omit<T, "_id"> & { _id: ObjectId };
 
@@ -43,6 +43,11 @@ export async function getServicesCollection(): Promise<Collection<WithObjectId<S
 export async function getCouponsCollection(): Promise<Collection<WithObjectId<Coupon>>> {
   const db = await getDb();
   return db.collection<WithObjectId<Coupon>>("coupons");
+}
+
+export async function getOrdersCollection(): Promise<Collection<WithObjectId<Order>>> {
+  const db = await getDb();
+  return db.collection<WithObjectId<Order>>("orders");
 }
 
 /** Serialize MongoDB document for API (ObjectId -> string) */

@@ -4,7 +4,7 @@ import { signOut } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
-import { LogIn, UserPlus, LogOut, Menu, X, Zap, ChevronDown, Sun, Moon, CircleDollarSign, Globe } from "lucide-react";
+import { LogIn, UserPlus, LogOut, Menu, X, Zap, ChevronDown, Sun, Moon, CircleDollarSign, Globe, MoreVertical, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { useCurrency } from "@/components/providers/currency-provider";
@@ -18,7 +18,7 @@ type PublicHeaderProps = {
   session?: Session | null;
 };
 
-const SCROLL_THRESHOLD = 80;
+const SCROLL_THRESHOLD = 120;
 
 export function PublicHeader({ showBack = false, session = null }: PublicHeaderProps) {
   const t = useTranslations("Header");
@@ -31,13 +31,28 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
   const lastScrollY = useRef(0);
 
   useEffect(() => {
-    const scroller = document.querySelector(".overflow-y-auto") as HTMLElement;
-    const target = scroller ?? window;
+    let scrollTarget: HTMLElement | Window | null = null;
+
+    function attachListener() {
+      const el = document.querySelector("main.overflow-y-auto") as HTMLElement | null;
+      const nextTarget = el ?? window;
+      if (scrollTarget === nextTarget) return;
+      if (scrollTarget) {
+        (scrollTarget as HTMLElement).removeEventListener?.("scroll", onScroll);
+        window.removeEventListener?.("scroll", onScroll);
+      }
+      scrollTarget = nextTarget;
+      scrollTarget.addEventListener("scroll", onScroll, { passive: true });
+      // Run once to sync state with current scroll position
+      onScroll();
+    }
 
     function onScroll() {
-      const top = scroller ? scroller.scrollTop : window.scrollY;
+      const el = document.querySelector("main.overflow-y-auto") as HTMLElement | null;
+      const top = el ? el.scrollTop : window.scrollY;
       setScrolled(top > 20);
 
+      // At hero (near top): always show header. Past hero: hide on scroll-down, show on scroll-up.
       if (top <= SCROLL_THRESHOLD) {
         setHeaderVisible(true);
       } else if (top > lastScrollY.current) {
@@ -48,8 +63,15 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
       lastScrollY.current = top;
     }
 
-    target.addEventListener("scroll", onScroll, { passive: true });
-    return () => target.removeEventListener("scroll", onScroll);
+    attachListener();
+    const id = setInterval(attachListener, 200);
+    return () => {
+      clearInterval(id);
+      if (scrollTarget) {
+        (scrollTarget as HTMLElement).removeEventListener?.("scroll", onScroll);
+        window.removeEventListener?.("scroll", onScroll);
+      }
+    };
   }, []);
 
   // Close menu on route change
@@ -107,8 +129,9 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
               </div>
               <div className="h-4 w-px shrink-0 self-center bg-border" aria-hidden />
               {session?.user ? (
-                <button
-                  onClick={() => {
+                <UserMenu
+                  pathname={pathname}
+                  onSignOut={() => {
                     try {
                       localStorage.removeItem("serviceFunnel_userName");
                     } catch {
@@ -116,11 +139,8 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
                     }
                     signOut({ callbackUrl: pathname || "/" });
                   }}
-                  className="flex h-9 items-center justify-center gap-2 rounded-full px-4 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 dark:text-zinc-400 dark:hover:text-white"
-                >
-                  <LogOut className="size-3.5 shrink-0" />
-                  {t("signOut")}
-                </button>
+                  t={t}
+                />
               ) : (
                 <>
                   <button
@@ -194,6 +214,14 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
           <div className="p-4">
             {session?.user ? (
               <div className="flex flex-col gap-3">
+                <Link
+                  href="/orders"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  <FileText className="size-4" />
+                  {t("quotes")}
+                </Link>
                 <button
                   onClick={() => {
                     setMenuOpen(false);
@@ -246,6 +274,74 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
         />
       </div>
     </>
+  );
+}
+
+function UserMenu({
+  pathname,
+  onSignOut,
+  t,
+}: {
+  pathname: string;
+  onSignOut: () => void;
+  t: (key: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex size-9 items-center justify-center rounded-full border border-border bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:text-white"
+        aria-label="User menu"
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        <MoreVertical className="size-4" />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full z-50 mt-1.5 min-w-[10rem] overflow-hidden rounded-xl border border-border bg-card shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+          role="menu"
+        >
+          <Link
+            href="/orders"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
+            role="menuitem"
+          >
+            <FileText className="size-4 shrink-0" />
+            {t("quotes")}
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onSignOut();
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+            role="menuitem"
+          >
+            <LogOut className="size-4 shrink-0" />
+            {t("signOut")}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

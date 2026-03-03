@@ -15,16 +15,18 @@ export default async function AdminLayout({ children, params }: Props) {
   if (session.user.role !== "admin") redirect(`/${locale}`);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-dvh max-h-dvh overflow-hidden bg-background">
       <AdminSidebar locale={locale} />
-      <div className="flex-1">
-        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-6">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border bg-card px-6">
           <span className="text-sm text-muted-foreground">Admin Dashboard</span>
           <LocaleLink href="/" locale={locale} className="text-sm text-primary hover:underline">
             ← Back to site
           </LocaleLink>
         </header>
-        <main className="p-6">{children}</main>
+        <main className="flex-1 min-h-0 overflow-y-auto p-6">
+          {children}
+        </main>
       </div>
     </div>
   );

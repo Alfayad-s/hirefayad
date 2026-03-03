@@ -9,13 +9,13 @@
   --muted-foreground: #78716c;
   --card: #ffffff;
   --card-foreground: #1c1917;
-  --primary: #0f766e;
-  --primary-foreground: #f0fdfa;
+  --primary: #eab308;
+  --primary-foreground: #1c1917;
   --secondary: #e7e5e4;
   --secondary-foreground: #1c1917;
-  --accent: #0d9488;
+  --accent: #ca8a04;
   --border: #e7e5e4;
-  --ring: #0f766e;
+  --ring: #eab308;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --radius: 0.75rem;
@@ -24,7 +24,7 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04);
-  --shadow-primary: 0 4px 14px 0 rgb(15 118 110 / 0.2);
+  --shadow-primary: 0 4px 14px 0 rgb(234 179 8 / 0.25);
   --header-bg: rgba(250, 249, 247, 0.7);
   --header-bg-scrolled: rgba(250, 249, 247, 0.92);
   --header-border: rgba(0, 0, 0, 0.06);
@@ -68,12 +68,12 @@
   --muted-foreground: #a8a29e;
   --card: #1c1917;
   --card-foreground: #fafaf9;
-  --primary: #14b8a6;
-  --primary-foreground: #0f766e;
+  --primary: #facc15;
+  --primary-foreground: #0c0a09;
   --secondary: #292524;
   --secondary-foreground: #fafaf9;
   --border: #292524;
-  --ring: #14b8a6;
+  --ring: #facc15;
   --header-bg: rgba(10, 10, 10, 0.4);
   --header-bg-scrolled: rgba(10, 10, 10, 0.92);
   --header-border: rgba(255, 255, 255, 0.04);
@@ -92,6 +92,18 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Pointer cursor for all clickable elements */
+button,
+[role="button"],
+a[href],
+select,
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+label[for] {
+  cursor: pointer;
 }
 
 @keyframes float {

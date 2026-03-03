@@ -147,7 +147,7 @@ export function ServiceSection({ service, locale, id, index, session }: Props) {
     <section
       ref={sectionRef}
       id={id}
-      className="relative min-h-full snap-start snap-always flex flex-col justify-center overflow-hidden px-4 py-16"
+      className="relative min-h-full flex flex-col justify-center overflow-hidden px-4 py-16"
     >
       {/* Content */}
       <div
@@ -200,38 +200,52 @@ export function ServiceSection({ service, locale, id, index, session }: Props) {
 
             <div className="mt-10 flex flex-wrap gap-3">
               {session?.user ? (
-                <Button
-                  size="lg"
-                  className="rounded-full bg-yellow-400 px-8 font-bold text-black hover:bg-yellow-300 shadow-[0_0_20px_rgba(245,197,24,0.25)] hover:shadow-[0_0_40px_rgba(245,197,24,0.4)] transition-all duration-300"
-                  onClick={() => {
-                    const el = document.getElementById("coupon");
-                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                >
-                  {t("applyCoupon")}
-                </Button>
-              ) : (
-                <Button
-                  asChild
-                  size="lg"
-                  className="rounded-full bg-yellow-400 px-8 font-bold text-black hover:bg-yellow-300 shadow-[0_0_20px_rgba(245,197,24,0.25)] hover:shadow-[0_0_40px_rgba(245,197,24,0.4)] transition-all duration-300"
-                >
-                  <LocaleLink href="/signup" locale={locale}>
+                <>
+                  <Button
+                    size="lg"
+                    className="rounded-full bg-yellow-400 px-8 font-bold text-black hover:bg-yellow-300 shadow-[0_0_20px_rgba(245,197,24,0.25)] hover:shadow-[0_0_40px_rgba(245,197,24,0.4)] transition-all duration-300"
+                    onClick={() => {
+                      const el = document.getElementById("coupon");
+                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                  >
                     {t("applyCoupon")}
-                  </LocaleLink>
-                </Button>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    className="rounded-full border-border bg-transparent text-foreground hover:bg-muted hover:border-ring px-8 transition-all duration-300"
+                  >
+                    <LocaleLink href="/quote" locale={locale}>
+                      {t("getQuote")}
+                    </LocaleLink>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    asChild
+                    size="lg"
+                    className="rounded-full bg-yellow-400 px-8 font-bold text-black hover:bg-yellow-300 shadow-[0_0_20px_rgba(245,197,24,0.25)] hover:shadow-[0_0_40px_rgba(245,197,24,0.4)] transition-all duration-300"
+                  >
+                    <LocaleLink href="/signup" locale={locale}>
+                      {t("applyCoupon")}
+                    </LocaleLink>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="lg"
+                    className="rounded-full border-border bg-transparent text-foreground hover:bg-muted hover:border-ring px-8 transition-all duration-300"
+                  >
+                    <LocaleLink href={`/login?callbackUrl=/${locale}/quote`} locale={locale}>
+                      {t("getQuote")}
+                    </LocaleLink>
+                  </Button>
+                </>
               )}
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="rounded-full border-border bg-transparent text-foreground hover:bg-muted hover:border-ring px-8 transition-all duration-300"
-              >
-                <LocaleLink href="/signup" locale={locale}>
-                  {t("getQuote")}
-                </LocaleLink>
-              </Button>
             </div>
+
           </div>
 
           {/* Right: 3D pricing cards */}

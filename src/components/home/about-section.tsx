@@ -12,7 +12,7 @@ export function AboutSection() {
   return (
     <section
       id="about"
-      className="relative min-h-full snap-start snap-always flex flex-col justify-center overflow-hidden px-4 py-16 md:py-24"
+      className="relative min-h-full flex flex-col justify-center overflow-hidden px-4 py-16 md:py-24"
     >
       <div className="relative mx-auto w-full max-w-5xl">
         <div className="grid gap-10 md:grid-cols-2 md:items-center md:gap-16">

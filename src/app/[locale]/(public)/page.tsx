@@ -32,13 +32,13 @@ export default async function HomePage({ params }: Props) {
       <PublicHeader session={session} />
       <WelcomeModal showForGuests={!session} />
 
-      <main className="relative flex-1 snap-y snap-mandatory overflow-y-auto overflow-x-hidden scroll-smooth pt-16 sm:pt-[5.5rem]">
+      <main className="relative flex-1 overflow-y-auto overflow-x-hidden scroll-smooth pt-16 sm:pt-[5.5rem]">
         <GridBackground />
 
         {/* ── HERO ── (100vh so content has space from header) */}
         <section
           id="hero"
-          className="relative min-h-[100dvh] snap-start snap-always flex flex-col items-center justify-center overflow-hidden px-4 py-16 md:py-20"
+          className="relative min-h-[100dvh] flex flex-col items-center justify-center overflow-hidden px-4 py-16 md:py-20"
         >
           {/* Floating decorative squares */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">

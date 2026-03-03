@@ -14,9 +14,11 @@ export default async function EditServicePage({ params }: Props) {
   const service = toJson(doc);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-foreground">Edit service</h1>
-      <p className="mt-1 text-muted-foreground">{service.title}</p>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Edit service</h1>
+        <p className="mt-1 text-muted-foreground">{service.title}</p>
+      </div>
       <AdminServiceForm locale={locale} service={service} />
     </div>
   );

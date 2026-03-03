@@ -55,7 +55,7 @@ export function ContactSection() {
   }
 
   return (
-    <section id="contact" className="min-h-full snap-start snap-always flex flex-col justify-center mx-auto max-w-6xl px-4 py-16">
+    <section id="contact" className="min-h-full flex flex-col justify-center mx-auto max-w-6xl px-4 py-16">
       <h2 className="text-center text-2xl font-bold text-foreground md:text-3xl">
         {t("title")}
       </h2>

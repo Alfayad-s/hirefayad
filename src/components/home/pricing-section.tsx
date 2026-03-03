@@ -13,7 +13,7 @@ export async function PricingSection({ locale }: { locale: string }) {
   if (list.length === 0) return null;
 
   return (
-    <section id="pricing" className="min-h-full snap-start snap-always flex flex-col justify-center mx-auto max-w-6xl px-4 py-16">
+    <section id="pricing" className="min-h-full flex flex-col justify-center mx-auto max-w-6xl px-4 py-16">
       <h2 className="text-center text-2xl font-bold text-foreground md:text-3xl">
         {t("title")}
       </h2>
