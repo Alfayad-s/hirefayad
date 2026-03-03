@@ -89,7 +89,7 @@ export async function POST(
 
     const pdfBytes = await generateQuotationPDF(merged, userName, userEmail);
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Cache-Control": "no-store",

@@ -55,7 +55,7 @@ export async function GET(
       userEmail
     );
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="quotation-${id.slice(-8)}.pdf"`,
