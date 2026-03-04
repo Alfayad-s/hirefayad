@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
+import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next"
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-geist-sans",
@@ -30,6 +32,8 @@ export default function RootLayout({
         />
       </head>
       <body className={`${plusJakarta.variable} font-sans antialiased`}>
+        <Analytics />
+        <SpeedInsights />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
