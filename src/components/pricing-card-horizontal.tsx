@@ -79,6 +79,7 @@ export function PricingCardHorizontal({
 
   const Icon = tier.icon;
   const label = labelProp ?? tier.label;
+  const isDarkCard = tier.id === "basic" || tier.id === "premium";
 
   const MAX_FEATURES_INITIAL = 6;
   const visibleFeatures = showAll ? features : features.slice(0, MAX_FEATURES_INITIAL);
@@ -122,7 +123,7 @@ export function PricingCardHorizontal({
         )}
 
         <div className="flex items-center gap-4 px-5 pt-4 pb-3">
-          <div className={`flex items-center gap-2 w-24 shrink-0 ${tier.color}`}>
+          <div className={`flex items-center gap-2 w-24 shrink-0 ${isDarkCard ? "text-zinc-300" : tier.color}`}>
             <Icon className="size-4 shrink-0" />
             <span className="text-xs font-bold uppercase tracking-widest whitespace-nowrap">
               {label}
@@ -131,13 +132,17 @@ export function PricingCardHorizontal({
 
           <div
             className={`self-stretch w-px ${
-              highlight ? "bg-amber-500/30 dark:bg-yellow-500/25" : "bg-zinc-700/50"
+              highlight ? "bg-amber-500/30 dark:bg-yellow-500/25" : isDarkCard ? "bg-zinc-600" : "bg-zinc-700/50"
             }`}
           />
 
           <span
             className={`text-2xl font-black tabular-nums ${
-              highlight ? "text-amber-600 dark:text-yellow-400" : "text-foreground"
+              highlight
+                ? "text-amber-600 dark:text-yellow-400"
+                : isDarkCard
+                  ? "text-zinc-50"
+                  : "text-foreground"
             }`}
           >
             {price}
@@ -154,36 +159,38 @@ export function PricingCardHorizontal({
             </span>
           )}
 
-          <span className="text-[11px] text-muted-foreground font-medium text-right min-w-0">
+          <span className={`text-[11px] font-medium text-right min-w-0 ${isDarkCard ? "text-zinc-400" : "text-muted-foreground"}`}>
             One-time{delivery ? ` · ${delivery}` : ""}
           </span>
         </div>
 
         <div
           className={`mx-5 h-px ${
-            highlight ? "bg-amber-500/25 dark:bg-yellow-500/20" : "bg-zinc-700/40"
+            highlight ? "bg-amber-500/25 dark:bg-yellow-500/20" : isDarkCard ? "bg-zinc-600/80" : "bg-zinc-700/40"
           }`}
         />
 
         {includeLabel && (
-          <div className="px-5 pt-3 text-[11px] font-medium text-muted-foreground">
+          <div className={`px-5 pt-3 text-[11px] font-medium ${isDarkCard ? "text-zinc-400" : "text-muted-foreground"}`}>
             {includeLabel}
           </div>
         )}
 
         <ul className="grid grid-cols-2 gap-x-4 gap-y-2 px-5 pt-2 pb-2">
           {visibleFeatures.map((f, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-foreground/90">
+            <li key={i} className={`flex items-start gap-2 text-xs leading-snug ${isDarkCard ? "text-zinc-200" : "text-foreground/90"}`}>
               <span
                 className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full ${
                   highlight
                     ? "bg-amber-500/20 text-amber-600 dark:bg-yellow-500/15 dark:text-yellow-400"
-                    : "bg-zinc-700/60 text-zinc-400 dark:bg-zinc-600 dark:text-zinc-300"
+                    : isDarkCard
+                      ? "bg-zinc-600 text-zinc-200"
+                      : "bg-zinc-700/60 text-zinc-400 dark:bg-zinc-600 dark:text-zinc-300"
                 }`}
               >
                 <Check className="size-2.5" />
               </span>
-              <span className="leading-snug">{f}</span>
+              <span>{f}</span>
             </li>
           ))}
         </ul>
@@ -194,7 +201,7 @@ export function PricingCardHorizontal({
               e.stopPropagation();
               setShowAll((v) => !v);
             }}
-            className="px-5 pb-3 text-[11px] font-medium text-amber-400 hover:text-amber-300 underline-offset-2 hover:underline"
+            className={`px-5 pb-3 text-[11px] font-medium underline-offset-2 hover:underline ${isDarkCard ? "text-amber-300 hover:text-amber-200" : "text-amber-400 hover:text-amber-300"}`}
           >
             {showAll ? "Show fewer features" : `Show ${features.length - visibleFeatures.length} more features`}
           </button>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Send, Loader2, ExternalLink, FileText, Percent, ImagePlus, PenLine, Building2, X, Save, Upload, Plus } from "lucide-react";
+import { ArrowLeft, Send, Loader2, ExternalLink, FileText, Percent, ImagePlus, PenLine, Building2, X, Save, Upload, Plus, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Order, OrderStatus } from "@/types";
 
@@ -118,8 +118,10 @@ export function AdminQuotationForm({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const [accepting, setAccepting] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
   const [status, setStatus] = useState<OrderStatus>("quoted");
+  const [quotationMode, setQuotationMode] = useState<"view_only" | "confirm_via_admin">("confirm_via_admin");
   const [quotationAdvancePercentage, setQuotationAdvancePercentage] = useState<number | "">("");
   const [quotationIntro, setQuotationIntro] = useState("");
   const [quotationPaymentTerms, setQuotationPaymentTerms] = useState("");
@@ -147,6 +149,7 @@ export function AdminQuotationForm({
           setOrder(data);
           setAdminNotes(data.adminNotes ?? "");
           setStatus(data.status);
+          setQuotationMode(data.quotationMode ?? "confirm_via_admin");
           setQuotationAdvancePercentage(data.quotationAdvancePercentage ?? "");
           setQuotationIntro(data.quotationIntro ?? "");
           setQuotationPaymentTerms(data.quotationPaymentTerms ?? "");
@@ -255,6 +258,7 @@ export function AdminQuotationForm({
         body: JSON.stringify({
           status,
           adminNotes,
+          quotationMode: quotationMode || undefined,
           quotationAdvancePercentage: quotationAdvancePercentage === "" ? undefined : Number(quotationAdvancePercentage),
           quotationIntro: quotationIntro.trim() || undefined,
           quotationPaymentTerms: quotationPaymentTerms.trim() || undefined,
@@ -338,6 +342,28 @@ export function AdminQuotationForm({
     }
   };
 
+  const handleAcceptQuotation = async () => {
+    setError(null);
+    setAccepting(true);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Failed to accept quotation");
+        return;
+      }
+      setMessage("Quotation accepted. Customer can now view and download the PDF.");
+      router.refresh();
+      if (order) setOrder({ ...order, status: "accepted", acceptedAt: new Date() });
+    } finally {
+      setAccepting(false);
+    }
+  };
+
   if (loading || !order) {
     return (
       <div className="rounded-xl border border-border p-12 text-center text-muted-foreground">
@@ -384,6 +410,39 @@ export function AdminQuotationForm({
             <h2 className="text-lg font-semibold">Customer</h2>
             <p className="mt-1 font-medium">{order.userName}</p>
             <p className="text-sm text-muted-foreground">{order.userEmail}</p>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h2 className="text-lg font-semibold">Before quoting the customer</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Choose how the customer will use this quotation.</p>
+            <div className="mt-4 space-y-3">
+              <label className="flex items-start gap-3 rounded-lg border border-border p-4 cursor-pointer hover:bg-muted/30 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input
+                  type="radio"
+                  name="quotationMode"
+                  checked={quotationMode === "view_only"}
+                  onChange={() => setQuotationMode("view_only")}
+                  className="mt-1 size-4"
+                />
+                <div>
+                  <span className="font-medium">Just look at the quotation</span>
+                  <p className="text-sm text-muted-foreground mt-0.5">Customer can view and download the PDF as soon as you send the link. No booking confirmation step.</p>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 rounded-lg border border-border p-4 cursor-pointer hover:bg-muted/30 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input
+                  type="radio"
+                  name="quotationMode"
+                  checked={quotationMode === "confirm_via_admin"}
+                  onChange={() => setQuotationMode("confirm_via_admin")}
+                  className="mt-1 size-4"
+                />
+                <div>
+                  <span className="font-medium">Accept & confirm order from admin</span>
+                  <p className="text-sm text-muted-foreground mt-0.5">Customer can see the PDF and download only after you accept the quotation and confirm the booking.</p>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-6">
@@ -656,6 +715,17 @@ export function AdminQuotationForm({
               {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
               Send quotation to customer
             </Button>
+            {(status === "quoted" || status === "pending_acceptance") && quotationMode === "confirm_via_admin" && (
+              <Button
+                onClick={handleAcceptQuotation}
+                disabled={accepting}
+                variant="default"
+                className="gap-1.5 bg-green-600 text-white hover:bg-green-500"
+              >
+                {accepting ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                Accept quotation (confirm booking)
+              </Button>
+            )}
             <Button variant="outline" size="sm" asChild>
               <a href={`/api/admin/orders/${orderId}/pdf`} target="_blank" rel="noopener noreferrer" className="gap-1.5">
                 Download PDF

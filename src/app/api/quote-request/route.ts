@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { items, couponCode } = parsed.data;
+  const { items, couponCode, quotationMode } = parsed.data;
 
   try {
     const servicesCol = await getServicesCollection();
@@ -137,6 +137,7 @@ export async function POST(request: Request) {
       totalAmountInr,
       status: "quoted" as const,
       viewToken,
+      quotationMode: quotationMode ?? "confirm_via_admin",
       createdAt: now,
       updatedAt: now,
     };

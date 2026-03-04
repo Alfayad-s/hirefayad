@@ -18,6 +18,7 @@ export const quoteRequestItemSchema = z.object({
 export const quoteRequestSchema = z.object({
   items: z.array(quoteRequestItemSchema).min(1, "Select at least one service"),
   couponCode: z.string().trim().optional(),
+  quotationMode: z.enum(["view_only", "confirm_via_admin"]).default("confirm_via_admin"),
 });
 
 export type QuoteRequestInput = z.infer<typeof quoteRequestSchema>;

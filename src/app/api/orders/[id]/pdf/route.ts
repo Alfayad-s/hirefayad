@@ -32,6 +32,19 @@ export async function GET(
       return NextResponse.json({ error: "Not your order" }, { status: 403 });
     }
 
+    const status = (order as { status?: string }).status;
+    const quotationMode = (order as { quotationMode?: "view_only" | "confirm_via_admin" }).quotationMode;
+    // view_only: PDF only after admin has sent the quotation (pending_acceptance = sent)
+    const canViewPdf =
+      status === "accepted" || status === "in_progress" || status === "completed" ||
+      (quotationMode === "view_only" && status === "pending_acceptance");
+    if (!canViewPdf) {
+      return NextResponse.json(
+        { error: "Quotation PDF is available only after your booking is confirmed." },
+        { status: 403 }
+      );
+    }
+
     let userName: string;
     let userEmail: string;
     if (order.userId) {

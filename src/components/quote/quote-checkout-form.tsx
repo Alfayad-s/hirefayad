@@ -107,6 +107,7 @@ export function QuoteCheckoutForm({
           ? [{ serviceId: defaultServiceId, tier: defaultTier, quantity: 1 }]
           : [],
       couponCode: "",
+      quotationMode: "confirm_via_admin",
     },
   });
 
@@ -276,6 +277,7 @@ export function QuoteCheckoutForm({
               })) ?? undefined,
           })),
           couponCode: (appliedCoupon?.code ?? data.couponCode?.trim()) || undefined,
+          quotationMode: data.quotationMode ?? "confirm_via_admin",
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -543,6 +545,43 @@ export function QuoteCheckoutForm({
             {errors.items?.message && (
               <p className="text-sm text-destructive">{errors.items.message}</p>
             )}
+
+            {/* Quotation type: just look or confirm when admin accepts */}
+            <div className="space-y-3 rounded-xl border border-border bg-card/80 backdrop-blur p-4">
+              <label className="block text-sm font-medium text-foreground">
+                {t("quotationTypeQuestion")}
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/20 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors">
+                  <input
+                    type="radio"
+                    value="view_only"
+                    {...register("quotationMode")}
+                    className="mt-1 size-4"
+                  />
+                  <div>
+                    <span className="font-medium text-foreground">{t("viewOnlyLabel")}</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t("viewOnlyDescription")}
+                    </p>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-muted/20 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition-colors">
+                  <input
+                    type="radio"
+                    value="confirm_via_admin"
+                    {...register("quotationMode")}
+                    className="mt-1 size-4"
+                  />
+                  <div>
+                    <span className="font-medium text-foreground">{t("confirmViaAdminLabel")}</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t("confirmViaAdminDescription")}
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
 
             {/* Coupon: input + Apply + available list */}
             <div className="space-y-3 rounded-xl border border-border bg-card/80 backdrop-blur p-4">

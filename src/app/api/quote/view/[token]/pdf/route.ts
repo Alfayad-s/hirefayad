@@ -5,9 +5,10 @@ import { generateQuotationPDF } from "@/lib/quotation-pdf";
 
 export const dynamic = "force-dynamic";
 
-/** Public: download quotation PDF by view token (from email link) */
+/** Public: download or display quotation PDF by view token (from email link).
+ *  Use ?display=1 to show inline in browser (e.g. in iframe); otherwise attachment for download. */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
@@ -15,11 +16,27 @@ export async function GET(
     return NextResponse.json({ error: "Invalid link" }, { status: 400 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const display = searchParams.get("display") === "1";
+
   try {
     const col = await getOrdersCollection();
     const order = await col.findOne({ viewToken: token } as { viewToken: string });
     if (!order) {
       return NextResponse.json({ error: "Quotation not found or link expired" }, { status: 404 });
+    }
+
+    const status = (order as { status?: string }).status;
+    const quotationMode = (order as { quotationMode?: "view_only" | "confirm_via_admin" }).quotationMode;
+    // view_only: PDF only after admin has sent the quotation (pending_acceptance = sent)
+    const canViewPdf =
+      status === "accepted" || status === "in_progress" || status === "completed" ||
+      (quotationMode === "view_only" && status === "pending_acceptance");
+    if (!canViewPdf) {
+      return NextResponse.json(
+        { error: "Quotation PDF is available only after your booking is confirmed." },
+        { status: 403 }
+      );
     }
 
     let userName: string;
@@ -47,7 +64,9 @@ export async function GET(
     return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="quotation-${String(order._id).slice(-8)}.pdf"`,
+        "Content-Disposition": display
+          ? "inline"
+          : `attachment; filename="quotation-${String(order._id).slice(-8)}.pdf"`,
       },
     });
   } catch (e) {

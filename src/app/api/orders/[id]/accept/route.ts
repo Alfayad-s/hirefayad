@@ -6,7 +6,7 @@ import { sendBookingConfirmedEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
-/** Accept quotation: requires either valid session (user must own order) or valid token in body */
+/** Accept quotation: only admin can accept. When admin accepts, customer can then view/download PDF. */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -16,7 +16,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid order ID" }, { status: 400 });
   }
 
-  let body: { token?: string; consent?: string };
+  let body: { consent?: string };
   try {
     body = await request.json();
   } catch {
@@ -24,6 +24,13 @@ export async function POST(
   }
 
   const session = await auth();
+  if (!session?.user || (session.user as { role?: string }).role !== "admin") {
+    return NextResponse.json(
+      { error: "Only an admin can accept this quotation" },
+      { status: 403 }
+    );
+  }
+
   const col = await getOrdersCollection();
   const order = await col.findOne({ _id: new ObjectId(id) });
   if (!order) {
@@ -38,19 +45,8 @@ export async function POST(
     );
   }
 
-  const viewToken = (order as { viewToken?: string }).viewToken;
-  const tokenMatch = body.token && viewToken && body.token === viewToken;
-  const userMatch = session?.user?.id && order.userId === session.user.id;
-
-  if (!tokenMatch && !userMatch) {
-    return NextResponse.json(
-      { error: "Unauthorized to accept this quotation" },
-      { status: 403 }
-    );
-  }
-
   const now = new Date();
-  const consentText = body.consent ?? `I accept the quotation and agree to the terms. ${now.toISOString()}`;
+  const consentText = body.consent ?? `Accepted by admin on behalf of customer. ${now.toISOString()}`;
 
   await col.updateOne(
     { _id: new ObjectId(id) },

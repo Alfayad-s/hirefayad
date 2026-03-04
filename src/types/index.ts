@@ -154,6 +154,8 @@ export interface Order {
   /** Snapshot of consent text or IP for records */
   signedConsent?: string;
   /** Optional quotation content (admin-editable, shown on PDF) */
+  /** Before quoting: "view_only" = customer can only look at quotation; "confirm_via_admin" = booking confirmed when admin accepts */
+  quotationMode?: "view_only" | "confirm_via_admin";
   quotationAdvancePercentage?: number;
   quotationIntro?: string;
   quotationPaymentTerms?: string;

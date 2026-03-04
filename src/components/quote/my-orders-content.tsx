@@ -41,7 +41,14 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 function OrderCard({ order, locale }: { order: Order; locale: string }) {
-  const lineTotal = (item: OrderItem) => item.unitPriceInr * item.quantity;
+  const lineTotal = (item: OrderItem) => {
+    const base = item.unitPriceInr * item.quantity;
+    const addOnsTotal = (item.addOns ?? []).reduce(
+      (sum, a) => sum + a.priceInr * a.quantity,
+      0
+    );
+    return base + addOnsTotal;
+  };
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -73,18 +80,38 @@ function OrderCard({ order, locale }: { order: Order; locale: string }) {
       {/* Full details: services list */}
       <div className="border-t border-border bg-muted/20 px-4 py-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Services</p>
-        <ul className="space-y-2">
-          {order.items.map((item, idx) => (
-            <li key={idx} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <Package className="size-3.5 text-muted-foreground shrink-0" />
-                <span className="font-medium text-foreground">{item.serviceTitle}</span>
-                <span className="text-muted-foreground">· {TIER_LABELS[item.tier] ?? item.tier}</span>
-                <span className="text-muted-foreground">× {item.quantity}</span>
-              </div>
-              <span className="font-medium text-foreground">{formatCurrency(lineTotal(item))}</span>
-            </li>
-          ))}
+        <ul className="space-y-3">
+          {order.items.map((item, idx) => {
+            const addOns = item.addOns ?? [];
+            return (
+              <li key={idx} className="space-y-1 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Package className="size-3.5 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-foreground">{item.serviceTitle}</span>
+                    <span className="text-muted-foreground">· {TIER_LABELS[item.tier] ?? item.tier}</span>
+                    <span className="text-muted-foreground">× {item.quantity}</span>
+                  </div>
+                  <span className="font-medium text-foreground">{formatCurrency(lineTotal(item))}</span>
+                </div>
+                {addOns.length > 0 && (
+                  <ul className="mt-1 ml-6 space-y-0.5 text-xs text-muted-foreground">
+                    {addOns.map((addon, aIdx) => {
+                      const addonTotal = addon.priceInr * addon.quantity;
+                      return (
+                        <li key={aIdx} className="flex justify-between">
+                          <span>
+                            + {addon.name} × {addon.quantity}
+                          </span>
+                          <span>{formatCurrency(addonTotal)}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
         </ul>
         <div className="mt-3 pt-3 border-t border-border space-y-1 text-sm">
           <div className="flex justify-between text-muted-foreground">
@@ -109,6 +136,8 @@ function OrderCard({ order, locale }: { order: Order; locale: string }) {
           </div>
         </div>
         <div className="border-t border-border px-4 py-3">
+          {((order.status === "accepted" || order.status === "in_progress" || order.status === "completed") ||
+            (order.quotationMode === "view_only" && order.status === "pending_acceptance")) && (
           <a
             href={`/api/orders/${order._id}/pdf`}
             target="_blank"
@@ -118,6 +147,11 @@ function OrderCard({ order, locale }: { order: Order; locale: string }) {
             <Download className="size-4" />
             Download quotation (PDF)
           </a>
+          )}
+          {order.status !== "accepted" && order.status !== "in_progress" && order.status !== "completed" &&
+            !(order.quotationMode === "view_only" && order.status === "pending_acceptance") && (
+            <p className="text-sm text-muted-foreground">PDF available after booking is confirmed.</p>
+          )}
         </div>
       </div>
     </div>

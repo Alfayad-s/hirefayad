@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { CheckCircle2, Loader2, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
+import { Download } from "lucide-react";
 import type { Order } from "@/types";
-import type { Session } from "next-auth";
 
 function formatCurrency(inr: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -22,11 +21,10 @@ export function ViewQuotationContent({
   token: string;
   locale: string;
 }) {
+  const t = useTranslations("Quote");
   const { data: session } = useSession();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accepting, setAccepting] = useState(false);
-  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,32 +45,17 @@ export function ViewQuotationContent({
       .finally(() => setLoading(false));
   }, [token]);
 
-  const handleAccept = async () => {
-    if (!order?._id || !token) return;
-    setError(null);
-    setAccepting(true);
-    try {
-      const res = await fetch(`/api/orders/${order._id}/accept`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          consent: `I accept the quotation and agree to the terms. ${new Date().toISOString()}`,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Failed to accept");
-        return;
-      }
-      setAccepted(true);
-    } finally {
-      setAccepting(false);
-    }
-  };
-
+  const pdfViewUrl = token ? `/api/quote/view/${token}/pdf?display=1` : null;
+  const isViewOnly = order?.quotationMode === "view_only";
+  // view_only: can see PDF only after admin has sent quotation (pending_acceptance = sent)
+  const canSeePdf =
+    order &&
+    (order.status === "accepted" || order.status === "in_progress" || order.status === "completed" ||
+      (isViewOnly && order.status === "pending_acceptance"));
+  const isConfirmViaAdmin = order?.quotationMode === "confirm_via_admin" || !order?.quotationMode;
+  const viewOnlyWaitingSent = isViewOnly && order?.status === "quoted";
   return (
-    <main className="mx-auto max-w-2xl px-4 pt-24 pb-16">
+    <main className="mx-auto max-w-5xl px-4 pt-24 pb-16">
       {loading && (
         <p className="text-center text-muted-foreground">Loading quotation…</p>
       )}
@@ -81,36 +64,110 @@ export function ViewQuotationContent({
           {error}
         </div>
       )}
-      {accepted && (
-        <div className="rounded-xl border border-primary/50 bg-primary/5 p-8 text-center">
-          <CheckCircle2 className="mx-auto size-12 text-primary" />
-          <h1 className="mt-4 text-xl font-bold">Booking confirmed</h1>
-          <p className="mt-2 text-muted-foreground">
-            Thank you. We&apos;ve sent a confirmation to your email and will start processing your service.
-          </p>
-        </div>
-      )}
-      {order && !accepted && (
+      {order && (
         <>
           <h1 className="text-2xl font-bold text-foreground">Your quotation</h1>
-          <p className="mt-1 text-muted-foreground">Review the details below and accept to book.</p>
+          <p className="mt-1 text-muted-foreground">
+            {canSeePdf
+              ? isViewOnly
+                ? "Your quotation – for viewing only. Contact us to proceed with booking."
+                : "Booking confirmed. You can view and download your quotation below."
+              : viewOnlyWaitingSent
+                ? t("viewOnlyWaitMessage")
+                : isConfirmViaAdmin
+                  ? "Your quotation is being prepared. You will be able to view and download the PDF once we confirm your booking."
+                  : "Your quotation – for viewing only. Contact us to proceed with booking."}
+          </p>
+
+          {viewOnlyWaitingSent && (
+            <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-4 text-center">
+              <p className="text-sm font-medium text-foreground">
+                {t("viewOnlyWaitMessage")}
+              </p>
+            </div>
+          )}
+
+          {/* Live PDF viewer - only after admin has accepted */}
+          {pdfViewUrl && canSeePdf && (
+            <div className="mt-8 rounded-xl border border-border bg-card overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border bg-muted/30 px-4 py-3">
+                <span className="text-sm font-semibold text-foreground">Quotation PDF</span>
+                <a
+                  href={pdfViewUrl.replace("?display=1", "")}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <Download className="size-3.5" />
+                  Download PDF
+                </a>
+              </div>
+              <div className="bg-muted/20 flex items-center justify-center">
+                <iframe
+                  src={pdfViewUrl}
+                  title="Quotation PDF"
+                  className="w-full border-0 min-h-[70vh] h-[75vh] max-h-[900px]"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="mt-8 rounded-xl border border-border bg-card p-6">
             <h2 className="font-semibold">Items</h2>
-            <ul className="mt-3 space-y-2">
-              {order.items.map((item, i) => (
-                <li key={i} className="flex justify-between text-sm">
-                  <span>
-                    {item.serviceTitle} – {item.tier} × {item.quantity}
-                  </span>
-                  <span>{formatCurrency(item.unitPriceInr * item.quantity)}</span>
-                </li>
-              ))}
+            <ul className="mt-3 space-y-3">
+              {order.items.map((item, i) => {
+                const addOns = item.addOns ?? [];
+                const baseTotal = item.unitPriceInr * item.quantity;
+                const addOnsTotal = addOns.reduce(
+                  (sum, a) => sum + a.priceInr * a.quantity,
+                  0
+                );
+                const itemTotal = baseTotal + addOnsTotal;
+                return (
+                  <li key={i} className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>
+                        {item.serviceTitle} – {item.tier} × {item.quantity}
+                      </span>
+                      <span>{formatCurrency(itemTotal)}</span>
+                    </div>
+                    {addOns.length > 0 && (
+                      <ul className="mt-1 ml-4 space-y-0.5 text-xs text-muted-foreground">
+                        {addOns.map((addon, aIdx) => {
+                          const addonTotal = addon.priceInr * addon.quantity;
+                          return (
+                            <li key={aIdx} className="flex justify-between">
+                              <span>
+                                + {addon.name} × {addon.quantity}
+                              </span>
+                              <span>{formatCurrency(addonTotal)}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
-            <div className="mt-4 flex justify-between border-t border-border pt-4 font-semibold">
-              <span>Total</span>
-              <span>{formatCurrency(order.totalAmountInr)}</span>
+            <div className="mt-4 space-y-1 border-t border-border pt-4 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span>{formatCurrency(order.subtotalInr)}</span>
+              </div>
+              {order.discountAmountInr > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Discount</span>
+                  <span>-{formatCurrency(order.discountAmountInr)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold text-foreground pt-1">
+                <span>Total</span>
+                <span>{formatCurrency(order.totalAmountInr)}</span>
+              </div>
             </div>
+            {canSeePdf && (
             <div className="mt-4 pt-4 border-t border-border">
               <a
                 href={`/api/quote/view/${token}/pdf`}
@@ -122,6 +179,7 @@ export function ViewQuotationContent({
                 Download quotation (PDF)
               </a>
             </div>
+            )}
           </div>
 
           {error && (
@@ -130,23 +188,11 @@ export function ViewQuotationContent({
             </div>
           )}
 
-          {(order.status === "quoted" || order.status === "pending_acceptance") && (
-            <Button
-              onClick={handleAccept}
-              disabled={accepting}
-              size="lg"
-              className="mt-8 w-full rounded-full bg-yellow-400 font-bold text-black hover:bg-yellow-300"
-            >
-              {accepting ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : (
-                "I accept & book"
-              )}
-            </Button>
-          )}
-          {(order.status === "accepted" || order.status === "in_progress" || order.status === "completed") && (
+          {canSeePdf && (
             <p className="mt-6 text-center text-muted-foreground">
-              You have already accepted this quotation.
+              {isViewOnly
+                ? "This quotation is for viewing only. Contact us to confirm your booking."
+                : "Your booking is confirmed. You can view and download your quotation above."}
             </p>
           )}
         </>

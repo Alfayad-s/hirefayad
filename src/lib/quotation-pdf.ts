@@ -288,6 +288,27 @@ export async function generateQuotationPDF(
     drawRightAt(formatCurrency(unitPrice), COL_RATE_END, { size: TABLE_BODY_SIZE });
     drawRightAt(formatCurrency(lineTotal), COL_AMOUNT_END, { size: TABLE_BODY_SIZE });
     y -= TABLE_ROW_HEIGHT;
+
+    // Add-ons for this item (user-selected at quote time)
+    const addOns = (item as { addOns?: { name: string; priceInr: number; quantity: number }[] }).addOns ?? [];
+    for (const addon of addOns) {
+      addPageIfNeeded();
+      const addonQty = Number(addon.quantity) || 1;
+      const addonRate = Number(addon.priceInr) || 0;
+      const addonTotal = addonRate * addonQty;
+      const addonDesc = fitDescription(`  + ${String(addon.name ?? "").trim() || "Add-on"}`, font, COL_DESC_MAX_WIDTH, SMALL_SIZE);
+      currentPage.drawText(addonDesc, {
+        x: COL_DESC_START,
+        y,
+        size: SMALL_SIZE,
+        font,
+        color: gray,
+      });
+      drawRightAt(String(addonQty), COL_QTY_END, { size: SMALL_SIZE });
+      drawRightAt(formatCurrency(addonRate), COL_RATE_END, { size: SMALL_SIZE });
+      drawRightAt(formatCurrency(addonTotal), COL_AMOUNT_END, { size: SMALL_SIZE });
+      y -= TABLE_ROW_HEIGHT;
+    }
   }
   y -= TABLE_ROW_HEIGHT * 0.5;
 

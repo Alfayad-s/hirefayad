@@ -230,56 +230,31 @@ export function ServiceSection({
                 </LocaleLink>
               </Button>
               {session?.user ? (
-                <>
-                  <Button
-                    size="lg"
-                    className="rounded-full bg-yellow-400 px-8 font-bold text-black hover:bg-yellow-300 shadow-[0_0_20px_rgba(245,197,24,0.25)] hover:shadow-[0_0_40px_rgba(245,197,24,0.4)] transition-all duration-300"
-                    onClick={() => {
-                      document
-                        .getElementById("coupon")
-                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }}
+                <Button
+                  asChild
+                  size="lg"
+                  className="rounded-full bg-yellow-400 px-8 font-bold text-black hover:bg-yellow-300 shadow-[0_0_20px_rgba(245,197,24,0.25)] hover:shadow-[0_0_40px_rgba(245,197,24,0.4)] transition-all duration-300"
+                >
+                  <LocaleLink
+                    href={`/quote?serviceId=${service._id}&tier=${selectedTier}`}
+                    locale={locale}
                   >
-                    {t("applyCoupon")}
-                  </Button>
-                  <Button
-                    asChild
-                    size="lg"
-                    className="rounded-full border-border bg-transparent text-foreground hover:bg-muted hover:border-ring px-8 transition-all duration-300"
-                  >
-                    <LocaleLink
-                      href={`/quote?serviceId=${service._id}&tier=${selectedTier}`}
-                      locale={locale}
-                    >
-                      {t("getQuote")}
-                    </LocaleLink>
-                  </Button>
-                </>
+                    {t("getQuote")}
+                  </LocaleLink>
+                </Button>
               ) : (
-                <>
-                  <Button
-                    asChild
-                    size="lg"
-                    className="rounded-full bg-yellow-400 px-8 font-bold text-black hover:bg-yellow-300 shadow-[0_0_20px_rgba(245,197,24,0.25)] hover:shadow-[0_0_40px_rgba(245,197,24,0.4)] transition-all duration-300"
+                <Button
+                  asChild
+                  size="lg"
+                  className="rounded-full bg-yellow-400 px-8 font-bold text-black hover:bg-yellow-300 shadow-[0_0_20px_rgba(245,197,24,0.25)] hover:shadow-[0_0_40px_rgba(245,197,24,0.4)] transition-all duration-300"
+                >
+                  <LocaleLink
+                    href={`/login?callbackUrl=${encodeURIComponent(`/${locale}/quote?serviceId=${service._id}&tier=${selectedTier}`)}`}
+                    locale={locale}
                   >
-                    <LocaleLink href="/signup" locale={locale}>
-                      {t("applyCoupon")}
-                    </LocaleLink>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="rounded-full border-border bg-transparent text-foreground hover:bg-muted hover:border-ring px-8 transition-all duration-300"
-                  >
-                    <LocaleLink
-                      href={`/login?callbackUrl=${encodeURIComponent(`/${locale}/quote?serviceId=${service._id}&tier=${selectedTier}`)}`}
-                      locale={locale}
-                    >
-                      {t("getQuote")}
-                    </LocaleLink>
-                  </Button>
-                </>
+                    {t("getQuote")}
+                  </LocaleLink>
+                </Button>
               )}
             </div>
           </div>

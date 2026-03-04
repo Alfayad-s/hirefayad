@@ -81,6 +81,7 @@ export async function PATCH(
   let body: {
     status?: OrderStatus;
     adminNotes?: string;
+    quotationMode?: "view_only" | "confirm_via_admin";
     quotationAdvancePercentage?: number;
     quotationIntro?: string;
     quotationPaymentTerms?: string;
@@ -108,6 +109,7 @@ export async function PATCH(
     updates.status = body.status;
   }
   if (body.adminNotes !== undefined) updates.adminNotes = body.adminNotes;
+  if (body.quotationMode !== undefined) updates.quotationMode = body.quotationMode;
   if (body.quotationAdvancePercentage !== undefined) updates.quotationAdvancePercentage = body.quotationAdvancePercentage;
   if (body.quotationIntro !== undefined) updates.quotationIntro = body.quotationIntro;
   if (body.quotationPaymentTerms !== undefined) updates.quotationPaymentTerms = body.quotationPaymentTerms;
