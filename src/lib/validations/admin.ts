@@ -46,6 +46,57 @@ export const serviceSchema = z.object({
     )
     .max(50)
     .optional(),
+  // Optional “what's included” breakdown
+  whatsIncluded: z
+    .object({
+      allTiers: z.array(z.string().min(1).max(300)).max(50).optional(),
+      proAndAbove: z.array(z.string().min(1).max(300)).max(50).optional(),
+      premiumOnly: z.array(z.string().min(1).max(300)).max(50).optional(),
+    })
+    .optional(),
+  // Optional “what's not included” list
+  whatsNotIncluded: z
+    .array(z.string().min(1).max(300))
+    .max(50)
+    .optional(),
+  // Optional add-ons
+  addOns: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(200),
+        description: z.string().max(1000).optional(),
+        price: z.number().int().min(0),
+        currency: z.string().min(1).max(10).optional(),
+      })
+    )
+    .max(50)
+    .optional(),
+  // Optional FAQs
+  faqs: z
+    .array(
+      z.object({
+        question: z.string().min(1).max(300),
+        answer: z.string().min(1).max(2000),
+      })
+    )
+    .max(50)
+    .optional(),
+  // Optional process steps
+  process: z
+    .array(
+      z.object({
+        step: z.number().int().min(1).optional(),
+        title: z.string().min(1).max(200),
+        description: z.string().min(1).max(2000),
+      })
+    )
+    .max(50)
+    .optional(),
+  // Optional guarantees
+  guarantees: z
+    .array(z.string().min(1).max(300))
+    .max(50)
+    .optional(),
 });
 
 export const couponSchema = z.object({

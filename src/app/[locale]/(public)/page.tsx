@@ -149,7 +149,7 @@ export default async function HomePage({ params }: Props) {
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
         </section>
 
-        {/* ── SERVICE SECTIONS ── */}
+        {/* ── SERVICE SECTIONS (preview) ── */}
         {list.map((service, index) => (
           <ServiceSection
             key={service._id}
@@ -158,6 +158,7 @@ export default async function HomePage({ params }: Props) {
             id={index === 0 ? "services" : `service-${service._id}`}
             index={index}
             session={session}
+            variant="home"
           />
         ))}
 

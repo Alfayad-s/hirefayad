@@ -5,198 +5,30 @@ import { LocaleLink } from "@/components/layout/locale-link";
 import { usePrice } from "@/hooks/use-price";
 import { Button } from "@/components/ui/button";
 import { useRef, useEffect, useState } from "react";
-import { Check, Zap, Star, Crown } from "lucide-react";
+import { Check } from "lucide-react";
 import type { Service } from "@/types";
 import type { Session } from "next-auth";
+import { PricingCardHorizontal, TIER_META } from "@/components/pricing-card-horizontal";
 
-type Props = { service: Service; locale: string; id: string; index: number; session?: Session | null };
+type Props = {
+  service: Service;
+  locale: string;
+  id: string;
+  index: number;
+  session?: Session | null;
+  variant?: "home" | "detail";
+};
 
-const TIER_META = [
-  {
-    id: "basic" as const,
-    label: "Basic",
-    icon: Zap,
-    color: "text-zinc-400",
-    border: "border-zinc-700",
-    bg: "bg-zinc-900/80",
-  },
-  {
-    id: "pro" as const,
-    label: "Pro",
-    icon: Star,
-    color: "text-amber-600 dark:text-yellow-400",
-    border: "border-amber-500/60 dark:border-yellow-500/50",
-    bg: "bg-amber-500/10 dark:bg-yellow-500/5",
-    highlight: true,
-  },
-  {
-    id: "premium" as const,
-    label: "Premium",
-    icon: Crown,
-    color: "text-zinc-200",
-    border: "border-zinc-600",
-    bg: "bg-zinc-800/80",
-  },
-];
+const TIER_META_LOCAL = TIER_META;
 
-/** Expanded horizontal pricing card with title, price row, divider, and feature list */
-function PricingCardHorizontal({
-  tier,
-  price,
-  features,
-  highlight,
-  selected,
-  onSelect,
-}: {
-  tier: (typeof TIER_META)[0];
-  price: string;
-  features: string[];
-  highlight?: boolean;
-  selected?: boolean;
-  onSelect?: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = useState("perspective(800px)");
-   const [showAll, setShowAll] = useState(false);
-
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const rotateX = ((y / rect.height) - 0.5) * -8;
-    const rotateY = ((x / rect.width) - 0.5) * 8;
-    setTransform(
-      `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.015,1.015,1.015)`
-    );
-  }
-
-  function handleMouseLeave() {
-    setTransform("perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)");
-  }
-
-  const Icon = tier.icon;
-
-  const MAX_FEATURES_INITIAL = 6;
-  const visibleFeatures = showAll ? features : features.slice(0, MAX_FEATURES_INITIAL);
-  const hasMore = features.length > MAX_FEATURES_INITIAL;
-
-  return (
-    <div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={onSelect}
-      className="relative cursor-pointer"
-      style={{ transition: "transform 0.15s ease-out" }}
-    >
-      {/* Glow behind highlighted card */}
-      {(highlight || selected) && (
-        <div
-          className="pointer-events-none absolute -inset-px rounded-2xl opacity-40"
-          style={{
-            background: "linear-gradient(135deg, #f5c518 0%, transparent 55%)",
-            filter: "blur(3px)",
-          }}
-        />
-      )}
-
-      <div
-        style={{
-          transform,
-          transition: "transform 0.15s ease-out",
-          boxShadow: highlight
-            ? "0 8px 32px rgba(245,197,24,0.15), inset 0 1px 0 rgba(255,255,255,0.08)"
-            : "0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)",
-        }}
-        className={`relative rounded-2xl border backdrop-blur-sm ${tier.border} ${tier.bg} ${
-          selected ? "ring-2 ring-amber-400/80" : ""
-        }`}
-      >
-        {/* Popular badge */}
-        {highlight && (
-          <span className="absolute -top-2.5 right-4 rounded-full bg-amber-500 dark:bg-yellow-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-black">
-            Popular
-          </span>
-        )}
-
-        {/* ── Top row: icon · label · price · tag ── */}
-        <div className="flex items-center gap-4 px-5 pt-4 pb-3">
-          {/* Icon + label */}
-          <div className={`flex items-center gap-2 w-24 shrink-0 ${tier.color}`}>
-            <Icon className="size-4 shrink-0" />
-            <span className="text-xs font-bold uppercase tracking-widest whitespace-nowrap">
-              {tier.label}
-            </span>
-          </div>
-
-          {/* Vertical divider */}
-          <div
-            className={`self-stretch w-px ${
-              highlight ? "bg-amber-500/30 dark:bg-yellow-500/25" : "bg-zinc-700/50"
-            }`}
-          />
-
-          {/* Price */}
-          <span
-            className={`text-2xl font-black tabular-nums ${
-              highlight ? "text-amber-600 dark:text-yellow-400" : "text-white"
-            }`}
-          >
-            {price}
-          </span>
-
-          <div className="flex-1" />
-
-          {/* One-time tag */}
-          <span className="text-[11px] text-zinc-500 font-medium whitespace-nowrap">
-            One-time
-          </span>
-        </div>
-
-        {/* ── Horizontal divider ── */}
-        <div
-          className={`mx-5 h-px ${
-            highlight ? "bg-amber-500/25 dark:bg-yellow-500/20" : "bg-zinc-700/40"
-          }`}
-        />
-
-        {/* ── Features list ── */}
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-2 px-5 pt-3 pb-2">
-          {visibleFeatures.map((f, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-zinc-300">
-              <span
-                className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full ${
-                  highlight
-                    ? "bg-amber-500/20 text-amber-600 dark:bg-yellow-500/15 dark:text-yellow-400"
-                    : "bg-zinc-700/60 text-zinc-400"
-                }`}
-              >
-                <Check className="size-2.5" />
-              </span>
-              <span className="leading-snug">{f}</span>
-            </li>
-          ))}
-        </ul>
-        {hasMore && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowAll((v) => !v);
-            }}
-            className="px-5 pb-3 text-[11px] font-medium text-amber-400 hover:text-amber-300 underline-offset-2 hover:underline"
-          >
-            {showAll ? "Show fewer features" : `Show ${features.length - visibleFeatures.length} more features`}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function ServiceSection({ service, locale, id, index, session }: Props) {
+export function ServiceSection({
+  service,
+  locale,
+  id,
+  index,
+  session,
+  variant = "home",
+}: Props) {
   const t = useTranslations("Services");
   const minPrice = Math.min(
     service.pricing.basic,
@@ -226,54 +58,56 @@ export function ServiceSection({ service, locale, id, index, session }: Props) {
     return () => obs.disconnect();
   }, []);
 
-  // Per-tier features: always show common features + any tier-specific extras
+  // Per-tier features: Basic shows full list, higher tiers show only incremental extras
   const baseFeatures = service.features ?? [];
   const tiered = (service as any).tieredFeatures as
     | { text: string; tiers: ("basic" | "pro" | "premium")[] }[]
     | undefined;
 
+  const collectForTier = (tier: "basic" | "pro" | "premium") => {
+    const tierTexts = tiered
+      ? tiered
+          .filter((f) => f.tiers?.includes(tier))
+          .map((f) => f.text)
+      : [];
+    return Array.from(new Set([...baseFeatures, ...tierTexts]));
+  };
+
+  const basicAll = collectForTier("basic");
+  const proAll = collectForTier("pro");
+  const premiumAll = collectForTier("premium");
+
+  const proExtras = proAll.filter((text) => !basicAll.includes(text));
+  const premiumExtras = premiumAll.filter((text) => !proAll.includes(text));
+
   const tiers = [
     {
-      ...TIER_META[0],
+      ...TIER_META_LOCAL[0],
       price: basicPrice,
-      features: [
-        ...baseFeatures,
-        ...(tiered
-          ? tiered
-              .filter((f) => f.tiers?.includes("basic"))
-              .map((f) => f.text)
-              .filter((txt) => !baseFeatures.includes(txt))
-          : []),
-      ],
+      features: basicAll,
+      delivery: service.deliveryTime?.basic,
     },
     {
-      ...TIER_META[1],
+      ...TIER_META_LOCAL[1],
       price: proPrice,
       highlight: true as const,
-      features: [
-        ...baseFeatures,
-        ...(tiered
-          ? tiered
-              .filter((f) => f.tiers?.includes("pro"))
-              .map((f) => f.text)
-              .filter((txt) => !baseFeatures.includes(txt))
-          : []),
-      ],
+      features: proExtras,
+      includeLabel: basicAll.length ? "Includes everything in Basic plan" : undefined,
+      delivery: service.deliveryTime?.pro,
     },
     {
-      ...TIER_META[2],
+      ...TIER_META_LOCAL[2],
       price: premiumPrice,
-      features: [
-        ...baseFeatures,
-        ...(tiered
-          ? tiered
-              .filter((f) => f.tiers?.includes("premium"))
-              .map((f) => f.text)
-              .filter((txt) => !baseFeatures.includes(txt))
-          : []),
-      ],
+      features: premiumExtras,
+      includeLabel: proAll.length ? "Includes everything in Pro plan" : undefined,
+      delivery: service.deliveryTime?.premium,
     },
-  ] as (typeof TIER_META[number] & { price: string; features: string[] })[];
+  ] as (typeof TIER_META_LOCAL[number] & {
+    price: string;
+    features: string[];
+    includeLabel?: string;
+    delivery?: string;
+  })[];
 
   return (
     <section
@@ -331,10 +165,21 @@ export function ServiceSection({ service, locale, id, index, session }: Props) {
               {service.title}
             </h2>
 
-            {/* Description */}
-            <p className="text-base leading-relaxed text-muted-foreground">
-              {service.description}
-            </p>
+            {/* Tagline / description */}
+            {service.shortTagline ? (
+              <>
+                <p className="text-sm font-medium text-yellow-500">
+                  {service.shortTagline}
+                </p>
+                <p className="mt-2 text-base leading-relaxed text-muted-foreground">
+                  {service.description}
+                </p>
+              </>
+            ) : (
+              <p className="text-base leading-relaxed text-muted-foreground">
+                {service.description}
+              </p>
+            )}
 
             {/* Features */}
             <ul className="space-y-3">
@@ -356,8 +201,34 @@ export function ServiceSection({ service, locale, id, index, session }: Props) {
               ))}
             </ul>
 
+            {/* Technologies */}
+            {service.technologies?.length ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {service.technologies.map((tech, i) => (
+                  <span
+                    key={i}
+                    className="rounded-full border border-yellow-500/40 bg-yellow-500/5 px-3 py-1 text-xs font-medium text-yellow-500"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
             {/* CTA buttons */}
             <div className="flex flex-wrap gap-3 pt-2">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-full border-border bg-transparent text-foreground hover:bg-muted hover:border-ring px-8 transition-all duration-300"
+              >
+                <LocaleLink
+                  href={`/services/${service._id}`}
+                  locale={locale}
+                >
+                  View details
+                </LocaleLink>
+              </Button>
               {session?.user ? (
                 <>
                   <Button
@@ -440,28 +311,235 @@ export function ServiceSection({ service, locale, id, index, session }: Props) {
               </p>
             </div>
 
-            {/* Tier cards — each with icon/price row + feature list */}
-            <div className="flex flex-col gap-4">
-              {tiers.map((tier, i) => (
-                <div
-                  key={tier.label}
-                  style={{
-                    opacity: visible ? 1 : 0,
-                    transform: visible ? "translateX(0)" : "translateX(24px)",
-                    transition: `opacity 0.5s ease ${0.25 + i * 0.1}s, transform 0.5s ease ${0.25 + i * 0.1}s`,
-                  }}
-                >
-                  <PricingCardHorizontal
-                    tier={tier}
-                    price={tier.price}
-                    features={tier.features}
-                    highlight={tier.highlight}
-                    selected={selectedTier === tier.id}
-                    onSelect={() => setSelectedTier(tier.id)}
-                  />
+          {/* Tier cards — each with icon/price row + feature list */}
+          <div className="flex flex-col gap-4">
+            {tiers.map((tier, i) => (
+              <div
+                key={tier.label}
+                style={{
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? "translateX(0)" : "translateX(24px)",
+                  transition: `opacity 0.5s ease ${0.25 + i * 0.1}s, transform 0.5s ease ${0.25 + i * 0.1}s`,
+                }}
+              >
+                <PricingCardHorizontal
+                  tier={tier}
+                  price={tier.price}
+                  features={tier.features}
+                  highlight={tier.highlight}
+                  selected={selectedTier === tier.id}
+                  includeLabel={tier.includeLabel}
+                  delivery={tier.delivery}
+                  onSelect={() => setSelectedTier(tier.id)}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* What's included / not included, add-ons, FAQ, process, guarantees */}
+          {variant === "detail" &&
+            (service.whatsIncluded ||
+              service.whatsNotIncluded?.length ||
+              service.addOns?.length ||
+              service.faqs?.length ||
+              service.process?.length ||
+              service.guarantees?.length) && (
+            <div className="mt-6 space-y-4">
+              {(service.whatsIncluded ||
+                service.whatsNotIncluded?.length) && (
+                <div className="rounded-2xl border border-border bg-slate-950/50 p-4">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    What’s included
+                  </h3>
+                  <div className="mt-2 grid gap-3 md:grid-cols-2">
+                    {service.whatsIncluded?.allTiers &&
+                      service.whatsIncluded.allTiers.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            All plans
+                          </p>
+                          <ul className="mt-1 space-y-1.5 text-xs text-muted-foreground">
+                            {service.whatsIncluded.allTiers.map(
+                              (item, idx) => (
+                                <li
+                                  key={idx}
+                                  className="flex items-start gap-2"
+                                >
+                                  <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+                                    <Check className="h-3 w-3" />
+                                  </span>
+                                  <span>{item}</span>
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    {service.whatsIncluded?.proAndAbove &&
+                      service.whatsIncluded.proAndAbove.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Pro & above
+                          </p>
+                          <ul className="mt-1 space-y-1.5 text-xs text-muted-foreground">
+                            {service.whatsIncluded.proAndAbove.map(
+                              (item, idx) => (
+                                <li
+                                  key={idx}
+                                  className="flex items-start gap-2"
+                                >
+                                  <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+                                    <Check className="h-3 w-3" />
+                                  </span>
+                                  <span>{item}</span>
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    {service.whatsIncluded?.premiumOnly &&
+                      service.whatsIncluded.premiumOnly.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Premium only
+                          </p>
+                          <ul className="mt-1 space-y-1.5 text-xs text-muted-foreground">
+                            {service.whatsIncluded.premiumOnly.map(
+                              (item, idx) => (
+                                <li
+                                  key={idx}
+                                  className="flex items-start gap-2"
+                                >
+                                  <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+                                    <Check className="h-3 w-3" />
+                                  </span>
+                                  <span>{item}</span>
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    {service.whatsNotIncluded &&
+                      service.whatsNotIncluded.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Not included
+                          </p>
+                          <ul className="mt-1 space-y-1.5 text-xs text-xs text-zinc-400">
+                            {service.whatsNotIncluded.map((item, idx) => (
+                              <li
+                                key={idx}
+                                className="flex items-start gap-2"
+                              >
+                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-zinc-600" />
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {service.addOns && service.addOns.length > 0 && (
+                <div className="rounded-2xl border border-border bg-slate-950/50 p-4">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Add-ons
+                  </h3>
+                  <ul className="mt-2 space-y-2 text-xs text-muted-foreground">
+                    {service.addOns.map((addon, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-start justify-between gap-3"
+                      >
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {addon.name}
+                          </p>
+                          {addon.description && (
+                            <p className="text-xs text-muted-foreground">
+                              {addon.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right text-xs font-semibold text-yellow-400 whitespace-nowrap">
+                          {(addon.currency || service.currency || "INR") +
+                            " " +
+                            addon.price.toLocaleString("en-IN")}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {service.faqs && service.faqs.length > 0 && (
+                <div className="rounded-2xl border border-border bg-slate-950/50 p-4">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    FAQs
+                  </h3>
+                  <div className="mt-2 space-y-3">
+                    {service.faqs.map((faq, idx) => (
+                      <div key={idx}>
+                        <p className="text-xs font-semibold text-foreground">
+                          {faq.question}
+                        </p>
+                          <p className="text-xs text-muted-foreground">
+                            {faq.answer}
+                          </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {service.process && service.process.length > 0 && (
+                <div className="rounded-2xl border border-border bg-slate-950/50 p-4">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    How the process works
+                  </h3>
+                  <ol className="mt-2 space-y-2 text-xs text-muted-foreground">
+                    {service.process.map((step, idx) => (
+                      <li key={idx} className="flex gap-2">
+                        <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500/15 text-[10px] font-semibold text-yellow-400">
+                          {step.step ?? idx + 1}
+                        </span>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {step.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {step.description}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {service.guarantees && service.guarantees.length > 0 && (
+                <div className="rounded-2xl border border-border bg-slate-950/50 p-4">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Guarantees
+                  </h3>
+                  <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+                    {service.guarantees.map((g, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+                          <Check className="h-3 w-3" />
+                        </span>
+                        <span>{g}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
+          )}
           </div>
         </div>
       </div>

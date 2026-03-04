@@ -101,6 +101,16 @@ export function AdminServiceForm({ locale, service }: Props) {
             premium: "",
           },
           technologies: service.technologies ?? [],
+          whatsIncluded: service.whatsIncluded ?? {
+            allTiers: [],
+            proAndAbove: [],
+            premiumOnly: [],
+          },
+          whatsNotIncluded: service.whatsNotIncluded ?? [],
+          addOns: service.addOns ?? [],
+          faqs: service.faqs ?? [],
+          process: service.process ?? [],
+          guarantees: service.guarantees ?? [],
         }
       : {
           title: "",
@@ -117,6 +127,16 @@ export function AdminServiceForm({ locale, service }: Props) {
             premium: "",
           },
           technologies: [],
+          whatsIncluded: {
+            allTiers: [],
+            proAndAbove: [],
+            premiumOnly: [],
+          },
+          whatsNotIncluded: [],
+          addOns: [],
+          faqs: [],
+          process: [],
+          guarantees: [],
         },
   });
 
@@ -129,6 +149,12 @@ export function AdminServiceForm({ locale, service }: Props) {
   const watchedCurrency = watch("currency");
   const watchedDelivery = watch("deliveryTime");
   const watchedTechnologies = watch("technologies") ?? [];
+  const watchedWhatsIncluded = watch("whatsIncluded");
+  const watchedWhatsNotIncluded = watch("whatsNotIncluded") ?? [];
+  const watchedAddOns = watch("addOns") ?? [];
+  const watchedFaqs = watch("faqs") ?? [];
+  const watchedProcess = watch("process") ?? [];
+  const watchedGuarantees = watch("guarantees") ?? [];
 
   const handleApplyBulkFeatures = () => {
     const lines = bulkFeaturesText
@@ -182,13 +208,76 @@ export function AdminServiceForm({ locale, service }: Props) {
         }))
         .filter((f) => f.text.length > 0 && f.tiers.length > 0);
 
+    const cleanTechnologies = (data.technologies ?? [])
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    const cleanWhatsIncluded =
+      data.whatsIncluded &&
+      (data.whatsIncluded.allTiers?.length ||
+        data.whatsIncluded.proAndAbove?.length ||
+        data.whatsIncluded.premiumOnly?.length)
+        ? {
+            allTiers:
+              data.whatsIncluded.allTiers
+                ?.map((x) => x.trim())
+                .filter((x) => x.length > 0) || undefined,
+            proAndAbove:
+              data.whatsIncluded.proAndAbove
+                ?.map((x) => x.trim())
+                .filter((x) => x.length > 0) || undefined,
+            premiumOnly:
+              data.whatsIncluded.premiumOnly
+                ?.map((x) => x.trim())
+                .filter((x) => x.length > 0) || undefined,
+          }
+        : undefined;
+
+    const cleanWhatsNotIncluded = (data.whatsNotIncluded ?? [])
+      .map((x) => x.trim())
+      .filter((x) => x.length > 0);
+
+    const cleanAddOns = (data.addOns ?? [])
+      .map((a) => ({
+        name: a.name.trim(),
+        description: a.description?.trim() || undefined,
+        price: a.price,
+        currency: a.currency?.trim() || undefined,
+      }))
+      .filter((a) => a.name.length > 0 && a.price >= 0);
+
+    const cleanFaqs = (data.faqs ?? [])
+      .map((f) => ({
+        question: f.question.trim(),
+        answer: f.answer.trim(),
+      }))
+      .filter((f) => f.question.length > 0 && f.answer.length > 0);
+
+    const cleanProcess = (data.process ?? [])
+      .map((p, idx) => ({
+        step: p.step && p.step > 0 ? p.step : idx + 1,
+        title: p.title.trim(),
+        description: p.description.trim(),
+      }))
+      .filter((p) => p.title.length > 0 && p.description.length > 0);
+
+    const cleanGuarantees = (data.guarantees ?? [])
+      .map((g) => g.trim())
+      .filter((g) => g.length > 0);
+
     const payload: ServiceInput = {
       ...data,
       features: cleanFeatures,
       tieredFeatures: cleanTiered.length > 0 ? cleanTiered : undefined,
-      technologies:
-        (data.technologies ?? []).map((t) => t.trim()).filter((t) => t.length > 0) ||
-        undefined,
+      technologies: cleanTechnologies.length ? cleanTechnologies : undefined,
+      whatsIncluded: cleanWhatsIncluded,
+      whatsNotIncluded: cleanWhatsNotIncluded.length
+        ? cleanWhatsNotIncluded
+        : undefined,
+      addOns: cleanAddOns.length ? cleanAddOns : undefined,
+      faqs: cleanFaqs.length ? cleanFaqs : undefined,
+      process: cleanProcess.length ? cleanProcess : undefined,
+      guarantees: cleanGuarantees.length ? cleanGuarantees : undefined,
     };
     const url = isEdit ? `/api/admin/services/${service!._id}` : "/api/admin/services";
     const method = isEdit ? "PUT" : "POST";
@@ -850,6 +939,352 @@ export function AdminServiceForm({ locale, service }: Props) {
                     onChange={(e) =>
                       setValue(
                         "technologies",
+                        e.target.value
+                          .split(/\r?\n/)
+                          .map((x) => x.trim())
+                          .filter((x) => x.length > 0),
+                        { shouldDirty: true }
+                      )
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* What's included / not included */}
+              <div className="asf-section">
+                <div className="asf-section-header">
+                  <div className="asf-section-icon">
+                    <Layers size={14} color="#818cf8" strokeWidth={2} />
+                  </div>
+                  <span className="asf-section-title">What’s included / not included</span>
+                </div>
+                <div className="asf-section-body" style={{ display: "grid", gap: 12 }}>
+                  <div>
+                    <label className="asf-label">Included in all tiers</label>
+                    <textarea
+                      className="asf-textarea"
+                      rows={3}
+                      placeholder="One item per line…"
+                      value={(watchedWhatsIncluded?.allTiers ?? []).join("\n")}
+                      onChange={(e) =>
+                        setValue(
+                          "whatsIncluded.allTiers",
+                          e.target.value
+                            .split(/\r?\n/)
+                            .map((x) => x.trim())
+                            .filter((x) => x.length > 0),
+                          { shouldDirty: true }
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="asf-label">Only in Pro & Premium</label>
+                    <textarea
+                      className="asf-textarea"
+                      rows={3}
+                      placeholder="One item per line…"
+                      value={(watchedWhatsIncluded?.proAndAbove ?? []).join("\n")}
+                      onChange={(e) =>
+                        setValue(
+                          "whatsIncluded.proAndAbove",
+                          e.target.value
+                            .split(/\r?\n/)
+                            .map((x) => x.trim())
+                            .filter((x) => x.length > 0),
+                          { shouldDirty: true }
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="asf-label">Only in Premium</label>
+                    <textarea
+                      className="asf-textarea"
+                      rows={3}
+                      placeholder="One item per line…"
+                      value={(watchedWhatsIncluded?.premiumOnly ?? []).join("\n")}
+                      onChange={(e) =>
+                        setValue(
+                          "whatsIncluded.premiumOnly",
+                          e.target.value
+                            .split(/\r?\n/)
+                            .map((x) => x.trim())
+                            .filter((x) => x.length > 0),
+                          { shouldDirty: true }
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="asf-label">What’s not included</label>
+                    <textarea
+                      className="asf-textarea"
+                      rows={3}
+                      placeholder="One item per line…"
+                      value={watchedWhatsNotIncluded.join("\n")}
+                      onChange={(e) =>
+                        setValue(
+                          "whatsNotIncluded",
+                          e.target.value
+                            .split(/\r?\n/)
+                            .map((x) => x.trim())
+                            .filter((x) => x.length > 0),
+                          { shouldDirty: true }
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Add-ons */}
+              <div className="asf-section">
+                <div className="asf-section-header">
+                  <div className="asf-section-icon">
+                    <DollarSign size={14} color="#818cf8" strokeWidth={2} />
+                  </div>
+                  <span className="asf-section-title">Add-ons (optional)</span>
+                </div>
+                <div className="asf-section-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {watchedAddOns.map((addon, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "minmax(0,2fr) minmax(0,3fr) 120px 90px 32px",
+                        gap: 8,
+                        alignItems: "center",
+                      }}
+                    >
+                      <input
+                        className="asf-input"
+                        placeholder="Name"
+                        value={addon.name ?? ""}
+                        onChange={(e) => {
+                          const next = [...watchedAddOns];
+                          next[idx] = { ...next[idx], name: e.target.value };
+                          setValue("addOns", next, { shouldDirty: true });
+                        }}
+                      />
+                      <input
+                        className="asf-input"
+                        placeholder="Description (optional)"
+                        value={addon.description ?? ""}
+                        onChange={(e) => {
+                          const next = [...watchedAddOns];
+                          next[idx] = { ...next[idx], description: e.target.value };
+                          setValue("addOns", next, { shouldDirty: true });
+                        }}
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        className="asf-input"
+                        placeholder="Price"
+                        value={addon.price ?? ""}
+                        onChange={(e) => {
+                          const next = [...watchedAddOns];
+                          next[idx] = {
+                            ...next[idx],
+                            price: e.target.value === "" ? (undefined as any) : Number(e.target.value),
+                          };
+                          setValue("addOns", next, { shouldDirty: true });
+                        }}
+                      />
+                      <input
+                        className="asf-input"
+                        placeholder="Currency"
+                        value={addon.currency ?? watchedCurrency ?? "INR"}
+                        onChange={(e) => {
+                          const next = [...watchedAddOns];
+                          next[idx] = { ...next[idx], currency: e.target.value };
+                          setValue("addOns", next, { shouldDirty: true });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="asf-remove-btn"
+                        onClick={() =>
+                          setValue(
+                            "addOns",
+                            watchedAddOns.filter((_, i) => i !== idx),
+                            { shouldDirty: true }
+                          )
+                        }
+                      >
+                        <Trash2 size={13} strokeWidth={2} />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="asf-add-feat"
+                    onClick={() =>
+                      setValue(
+                        "addOns",
+                        [...watchedAddOns, { name: "", description: "", price: 0, currency: watchedCurrency ?? "INR" }],
+                        { shouldDirty: true }
+                      )
+                    }
+                  >
+                    <Plus size={14} strokeWidth={2.5} /> Add add-on
+                  </button>
+                </div>
+              </div>
+
+              {/* FAQs */}
+              <div className="asf-section">
+                <div className="asf-section-header">
+                  <div className="asf-section-icon">
+                    <FileText size={14} color="#818cf8" strokeWidth={2} />
+                  </div>
+                  <span className="asf-section-title">FAQs (optional)</span>
+                </div>
+                <div className="asf-section-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {watchedFaqs.map((faq, idx) => (
+                    <div key={idx} className="space-y-2 rounded-lg border border-border/60 bg-slate-950/40 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          FAQ {idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          className="asf-remove-btn"
+                          onClick={() =>
+                            setValue(
+                              "faqs",
+                              watchedFaqs.filter((_, i) => i !== idx),
+                              { shouldDirty: true }
+                            )
+                          }
+                        >
+                          <Trash2 size={13} strokeWidth={2} />
+                        </button>
+                      </div>
+                      <input
+                        className="asf-input"
+                        placeholder="Question"
+                        value={faq.question ?? ""}
+                        onChange={(e) => {
+                          const next = [...watchedFaqs];
+                          next[idx] = { ...next[idx], question: e.target.value };
+                          setValue("faqs", next, { shouldDirty: true });
+                        }}
+                      />
+                      <textarea
+                        className="asf-textarea"
+                        rows={2}
+                        placeholder="Answer"
+                        value={faq.answer ?? ""}
+                        onChange={(e) => {
+                          const next = [...watchedFaqs];
+                          next[idx] = { ...next[idx], answer: e.target.value };
+                          setValue("faqs", next, { shouldDirty: true });
+                        }}
+                      />
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="asf-add-feat"
+                    onClick={() =>
+                      setValue("faqs", [...watchedFaqs, { question: "", answer: "" }], {
+                        shouldDirty: true,
+                      })
+                    }
+                  >
+                    <Plus size={14} strokeWidth={2.5} /> Add FAQ
+                  </button>
+                </div>
+              </div>
+
+              {/* Process steps */}
+              <div className="asf-section">
+                <div className="asf-section-header">
+                  <div className="asf-section-icon">
+                    <List size={14} color="#818cf8" strokeWidth={2} />
+                  </div>
+                  <span className="asf-section-title">Process (optional)</span>
+                </div>
+                <div className="asf-section-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {watchedProcess.map((step, idx) => (
+                    <div key={idx} className="space-y-2 rounded-lg border border-border/60 bg-slate-950/40 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Step {step.step ?? idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          className="asf-remove-btn"
+                          onClick={() =>
+                            setValue(
+                              "process",
+                              watchedProcess.filter((_, i) => i !== idx),
+                              { shouldDirty: true }
+                            )
+                          }
+                        >
+                          <Trash2 size={13} strokeWidth={2} />
+                        </button>
+                      </div>
+                      <input
+                        className="asf-input"
+                        placeholder="Step title"
+                        value={step.title ?? ""}
+                        onChange={(e) => {
+                          const next = [...watchedProcess];
+                          next[idx] = { ...next[idx], title: e.target.value };
+                          setValue("process", next, { shouldDirty: true });
+                        }}
+                      />
+                      <textarea
+                        className="asf-textarea"
+                        rows={2}
+                        placeholder="Step description"
+                        value={step.description ?? ""}
+                        onChange={(e) => {
+                          const next = [...watchedProcess];
+                          next[idx] = { ...next[idx], description: e.target.value };
+                          setValue("process", next, { shouldDirty: true });
+                        }}
+                      />
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="asf-add-feat"
+                    onClick={() =>
+                      setValue(
+                        "process",
+                        [...watchedProcess, { step: watchedProcess.length + 1, title: "", description: "" }],
+                        { shouldDirty: true }
+                      )
+                    }
+                  >
+                    <Plus size={14} strokeWidth={2.5} /> Add process step
+                  </button>
+                </div>
+              </div>
+
+              {/* Guarantees */}
+              <div className="asf-section">
+                <div className="asf-section-header">
+                  <div className="asf-section-icon">
+                    <Sparkles size={14} color="#818cf8" strokeWidth={2} />
+                  </div>
+                  <span className="asf-section-title">Guarantees (optional)</span>
+                </div>
+                <div className="asf-section-body">
+                  <label className="asf-label">Guarantees</label>
+                  <textarea
+                    className="asf-textarea"
+                    rows={3}
+                    placeholder="One guarantee per line…"
+                    value={watchedGuarantees.join("\n")}
+                    onChange={(e) =>
+                      setValue(
+                        "guarantees",
                         e.target.value
                           .split(/\r?\n/)
                           .map((x) => x.trim())

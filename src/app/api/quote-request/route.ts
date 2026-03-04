@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       tier: ServiceTier;
       quantity: number;
       unitPriceInr: number;
+      addOns?: { name: string; priceInr: number; quantity: number }[];
     }> = [];
     let subtotalInr = 0;
 
@@ -63,14 +64,27 @@ export async function POST(request: Request) {
         );
       }
       const unitPriceInr = service.pricing[item.tier] ?? 0;
-      const lineTotal = unitPriceInr * item.quantity;
-      subtotalInr += lineTotal;
+      const baseLineTotal = unitPriceInr * item.quantity;
+
+      const addOns =
+        item.addOns?.map((a) => ({
+          name: a.name,
+          priceInr: a.priceInr,
+          quantity: a.quantity ?? 1,
+        })) ?? [];
+      const addOnsTotal = addOns.reduce(
+        (sum, a) => sum + a.priceInr * a.quantity,
+        0
+      );
+
+      subtotalInr += baseLineTotal + addOnsTotal;
       orderItems.push({
         serviceId: item.serviceId,
         serviceTitle: service.title,
         tier: item.tier,
         quantity: item.quantity,
         unitPriceInr,
+        addOns: addOns.length ? addOns : undefined,
       });
     }
 

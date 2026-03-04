@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { quoteRequestSchema, type QuoteRequestInput } from "@/lib/validations/quote";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, Loader2, Plus, Ticket, Trash2, Zap, Star, Crown } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Ticket, Trash2 } from "lucide-react";
 import { LocaleLink } from "@/components/layout/locale-link";
 import { usePrice } from "@/hooks/use-price";
 import type { Service } from "@/types";
+import { PricingCardHorizontal, TIER_META } from "@/components/pricing-card-horizontal";
 
 type QuoteCheckoutFormProps = {
   locale: string;
@@ -21,126 +22,47 @@ type QuoteCheckoutFormProps = {
 
 const TIERS: Array<"basic" | "pro" | "premium"> = ["basic", "pro", "premium"];
 
-const TIER_META = [
-  { id: "basic" as const, icon: Zap, color: "text-zinc-400", border: "border-zinc-700", bg: "bg-zinc-900", featureKeys: ["planBasic1", "planBasic2", "planBasic3"] as const },
-  { id: "pro" as const, icon: Star, color: "text-amber-700 dark:text-yellow-400", border: "border-amber-500/50 dark:border-yellow-500/50", bg: "bg-amber-500/10 dark:bg-yellow-500/5", featureKeys: ["planPro1", "planPro2", "planPro3", "planPro4"] as const },
-  { id: "premium" as const, icon: Crown, color: "text-zinc-200", border: "border-zinc-600", bg: "bg-zinc-800/80", featureKeys: ["planPremium1", "planPremium2", "planPremium3", "planPremium4", "planPremium5"] as const },
-];
+/** Build feature list for a tier: common features + tier-specific tiered features. */
+function getFeaturesForTier(
+  service: Service | null,
+  tier: "basic" | "pro" | "premium"
+): string[] {
+  if (!service) return [];
+  const baseFeatures = service.features ?? [];
+  const tiered = (service as {
+    tieredFeatures?: { text: string; tiers: ("basic" | "pro" | "premium")[] }[];
+  }).tieredFeatures;
+  const tierTexts = tiered
+    ? tiered.filter((f) => f.tiers?.includes(tier)).map((f) => f.text)
+    : [];
+  return Array.from(new Set([...baseFeatures, ...tierTexts]));
+}
+
+/** For Pro: only extras vs Basic. For Premium: only extras vs Pro. */
+function getExtrasForTier(
+  service: Service | null,
+  tier: "basic" | "pro" | "premium"
+): { features: string[]; includeLabel?: string } {
+  if (!service) return { features: [] };
+  const basicAll = getFeaturesForTier(service, "basic");
+  const proAll = getFeaturesForTier(service, "pro");
+  const premiumAll = getFeaturesForTier(service, "premium");
+  if (tier === "basic") return { features: basicAll };
+  if (tier === "pro") {
+    const proExtras = proAll.filter((text) => !basicAll.includes(text));
+    return {
+      features: proExtras,
+      includeLabel: basicAll.length ? "Includes everything in Basic plan" : undefined,
+    };
+  }
+  const premiumExtras = premiumAll.filter((text) => !proAll.includes(text));
+  return {
+    features: premiumExtras,
+    includeLabel: proAll.length ? "Includes everything in Pro plan" : undefined,
+  };
+}
 
 type AvailableCoupon = { code: string; discountPercentage: number; expiryDate: string };
-
-function PlanCard({
-  tierMeta,
-  label,
-  priceLabel,
-  features,
-  isSelected,
-  onSelect,
-}: {
-  tierMeta: (typeof TIER_META)[number];
-  label: string;
-  priceLabel: string;
-  features: string[];
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const [transform, setTransform] = useState("perspective(1000px)");
-  const isDarkCard = tierMeta.id === "basic" || tierMeta.id === "premium";
-
-  function handleMouseMove(e: React.MouseEvent<HTMLButtonElement>) {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const rotateX = ((y / rect.height) - 0.5) * -12;
-    const rotateY = ((x / rect.width) - 0.5) * 12;
-    setTransform(
-      `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02,1.02,1.02)`
-    );
-  }
-
-  function handleMouseLeave() {
-    setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)");
-  }
-
-  const Icon = tierMeta.icon;
-
-  return (
-    <button
-      type="button"
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={onSelect}
-      className="relative w-full cursor-pointer text-left outline-none"
-      style={{ transition: "transform 0.15s ease-out" }}
-    >
-      {isSelected && (
-        <div
-          className="absolute -inset-px rounded-2xl opacity-70"
-          style={{
-            background: "linear-gradient(135deg, rgba(245,197,24,0.5), transparent 60%)",
-            filter: "blur(1px)",
-          }}
-        />
-      )}
-      <div
-        className={`relative flex flex-col gap-3 rounded-2xl border p-5 backdrop-blur-sm transition-all ${tierMeta.border} ${tierMeta.bg} ${
-          isSelected ? "ring-2 ring-yellow-400 dark:ring-yellow-500 ring-offset-2 ring-offset-background" : ""
-        }`}
-        style={{
-          transform,
-          boxShadow: isSelected
-            ? "0 20px 60px rgba(245,197,24,0.15), inset 0 1px 0 rgba(255,255,255,0.08)"
-            : "0 20px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04)",
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className={`flex items-center gap-2 ${tierMeta.color}`}>
-            <Icon className="size-4" />
-            <span className="text-sm font-semibold uppercase tracking-widest">{label}</span>
-          </div>
-          {isSelected && (
-            <span className="flex size-6 items-center justify-center rounded-full bg-yellow-400 text-black">
-              <Check className="size-3.5" />
-            </span>
-          )}
-        </div>
-        <div
-          className={`text-xl font-bold ${
-            isDarkCard ? "text-zinc-50" : "text-foreground"
-          }`}
-        >
-          {priceLabel}
-        </div>
-        <p
-          className={`text-xs ${
-            isDarkCard ? "text-zinc-200" : "text-muted-foreground"
-          }`}
-        >
-          One-time project
-        </p>
-        {features.length > 0 && (
-          <ul className="mt-1 space-y-1.5 border-t border-border/50 pt-3">
-            {features.map((text, i) => (
-              <li
-                key={i}
-                className={`flex items-center gap-2 text-xs ${
-                  isDarkCard ? "text-zinc-100" : "text-muted-foreground"
-                }`}
-              >
-                <Check className="size-3.5 shrink-0 text-primary" />
-                {text}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </button>
-  );
-}
 
 export function QuoteCheckoutForm({
   locale,
@@ -238,7 +160,13 @@ export function QuoteCheckoutForm({
     const svc = services.find((s) => s._id === item.serviceId);
     if (!svc) return sum;
     const price = svc.pricing[item.tier] ?? 0;
-    return sum + price * item.quantity;
+    const base = price * item.quantity;
+    const addOnsTotal =
+      (item.addOns ?? []).reduce(
+        (acc, addOn) => acc + (addOn.priceInr ?? 0) * (addOn.quantity ?? 1),
+        0
+      ) ?? 0;
+    return sum + base + addOnsTotal;
   }, 0);
 
   const discountAmountInr = appliedCoupon
@@ -340,6 +268,12 @@ export function QuoteCheckoutForm({
             serviceId: i.serviceId,
             tier: i.tier,
             quantity: i.quantity ?? 1,
+            addOns:
+              i.addOns?.map((a) => ({
+                name: a.name,
+                priceInr: a.priceInr,
+                quantity: a.quantity ?? 1,
+              })) ?? undefined,
           })),
           couponCode: (appliedCoupon?.code ?? data.couponCode?.trim()) || undefined,
         }),
@@ -363,6 +297,13 @@ export function QuoteCheckoutForm({
   const proPriceLabel = usePrice(primaryService?.pricing.pro ?? 0);
   const premiumPriceLabel = usePrice(primaryService?.pricing.premium ?? 0);
 
+  const formatInr = (amount: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+
   return (
     <div className="w-full">
       <LocaleLink
@@ -381,38 +322,44 @@ export function QuoteCheckoutForm({
           </div>
         )}
 
-        <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+        <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
           {/* Left: Plan cards */}
           <div className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
               {t("tier")}
             </h2>
-            <div className="flex flex-col gap-3">
-              <PlanCard
-                tierMeta={TIER_META[0]}
-                label={tierLabels.basic}
-                priceLabel={basicPriceLabel}
-                features={TIER_META[0].featureKeys.map((k) => t(k))}
-                isSelected={selectedTier === "basic"}
-                onSelect={() => selectTier("basic")}
-              />
-              <PlanCard
-                tierMeta={TIER_META[1]}
-                label={tierLabels.pro}
-                priceLabel={proPriceLabel}
-                features={TIER_META[1].featureKeys.map((k) => t(k))}
-                isSelected={selectedTier === "pro"}
-                onSelect={() => selectTier("pro")}
-              />
-              <PlanCard
-                tierMeta={TIER_META[2]}
-                label={tierLabels.premium}
-                priceLabel={premiumPriceLabel}
-                features={TIER_META[2].featureKeys.map((k) => t(k))}
-                isSelected={selectedTier === "premium"}
-                onSelect={() => selectTier("premium")}
-              />
-            </div>
+          <div className="flex flex-col gap-3">
+            <PricingCardHorizontal
+              tier={TIER_META[0]}
+              label={tierLabels.basic}
+              price={basicPriceLabel}
+              features={getFeaturesForTier(primaryService ?? null, "basic")}
+              selected={selectedTier === "basic"}
+              delivery={primaryService?.deliveryTime?.basic}
+              onSelect={() => selectTier("basic")}
+            />
+            <PricingCardHorizontal
+              tier={TIER_META[1]}
+              label={tierLabels.pro}
+              price={proPriceLabel}
+              features={getExtrasForTier(primaryService ?? null, "pro").features}
+              highlight={TIER_META[1].highlight}
+              selected={selectedTier === "pro"}
+              includeLabel={getExtrasForTier(primaryService ?? null, "pro").includeLabel}
+              delivery={primaryService?.deliveryTime?.pro}
+              onSelect={() => selectTier("pro")}
+            />
+            <PricingCardHorizontal
+              tier={TIER_META[2]}
+              label={tierLabels.premium}
+              price={premiumPriceLabel}
+              features={getExtrasForTier(primaryService ?? null, "premium").features}
+              selected={selectedTier === "premium"}
+              includeLabel={getExtrasForTier(primaryService ?? null, "premium").includeLabel}
+              delivery={primaryService?.deliveryTime?.premium}
+              onSelect={() => selectTier("premium")}
+            />
+          </div>
           </div>
 
           {/* Right: Form */}
@@ -432,12 +379,52 @@ export function QuoteCheckoutForm({
               </Button>
             </div>
 
-            {items.map((_, index) => (
-              <div
-                key={index}
-                className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card/80 backdrop-blur p-4"
-              >
-                <div className="min-w-[180px] flex-1">
+            {items.map((item, index) => {
+              const svc = services.find((s) => s._id === item.serviceId);
+              const availableAddOns = svc?.addOns ?? [];
+              const selectedAddOns = item.addOns ?? [];
+
+              const toggleAddOn = (addonName: string, priceInr: number) => {
+                const current = [...(item.addOns ?? [])];
+                const existingIndex = current.findIndex(
+                  (a) => a.name === addonName && a.priceInr === priceInr
+                );
+                let next;
+                if (existingIndex >= 0) {
+                  next = current.filter((_, i) => i !== existingIndex);
+                } else {
+                  next = [...current, { name: addonName, priceInr, quantity: 1 }];
+                }
+                const updatedItems = items.map((it, i) =>
+                  i === index ? { ...it, addOns: next } : it
+                );
+                setValue("items", updatedItems, { shouldValidate: true });
+              };
+
+              const updateAddOnQty = (
+                addonName: string,
+                priceInr: number,
+                quantity: number
+              ) => {
+                const current = [...(item.addOns ?? [])];
+                const existingIndex = current.findIndex(
+                  (a) => a.name === addonName && a.priceInr === priceInr
+                );
+                if (existingIndex < 0) return;
+                current[existingIndex] = { ...current[existingIndex], quantity };
+                const updatedItems = items.map((it, i) =>
+                  i === index ? { ...it, addOns: current } : it
+                );
+                setValue("items", updatedItems, { shouldValidate: true });
+              };
+
+              return (
+                <div
+                  key={index}
+                  className="space-y-3 rounded-xl border border-border bg-card/80 backdrop-blur p-4"
+                >
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="min-w-[180px] flex-1">
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                     {t("service")}
                   </label>
@@ -452,30 +439,107 @@ export function QuoteCheckoutForm({
                     ))}
                   </select>
                 </div>
-                <div className="w-[100px]">
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                    {t("quantity")}
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                    {...register(`items.${index}.quantity`, { valueAsNumber: true })}
-                  />
+                    <div className="w-[100px]">
+                      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                        {t("quantity")}
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                        {...register(`items.${index}.quantity`, {
+                          valueAsNumber: true,
+                        })}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeItem(index)}
+                      disabled={items.length <= 1}
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                      aria-label="Remove"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+
+                  {/* Add-ons for this service */}
+                  {availableAddOns.length > 0 && (
+                    <div className="mt-2 space-y-2 rounded-lg border border-dashed border-border/70 bg-background/50 p-3">
+                      <p className="text-xs font-semibold text-muted-foreground">
+                        Optional add-ons
+                      </p>
+                      <div className="space-y-1.5">
+                        {availableAddOns.map((addon) => {
+                          const isSelected = selectedAddOns.some(
+                            (a) =>
+                              a.name === addon.name && a.priceInr === addon.price
+                          );
+                          const current =
+                            selectedAddOns.find(
+                              (a) =>
+                                a.name === addon.name &&
+                                a.priceInr === addon.price
+                            ) ?? undefined;
+                          return (
+                            <div
+                              key={addon.name + addon.price}
+                              className="flex items-center gap-2"
+                            >
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toggleAddOn(addon.name, addon.price)
+                                }
+                                className={`flex h-6 w-6 items-center justify-center rounded border text-xs ${
+                                  isSelected
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border bg-background text-muted-foreground"
+                                }`}
+                              >
+                                {isSelected ? "✓" : "+"}
+                              </button>
+                              <div className="flex-1">
+                                <p className="text-xs font-medium text-foreground">
+                                  {addon.name}
+                                </p>
+                                {addon.description && (
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {addon.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right text-xs text-muted-foreground">
+                                <div className="font-semibold text-foreground">
+                                  {formatInr(addon.price)}
+                                </div>
+                                {isSelected && (
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    className="mt-1 w-16 rounded border border-input bg-background px-1.5 py-0.5 text-[11px]"
+                                    value={current?.quantity ?? 1}
+                                    onChange={(e) =>
+                                      updateAddOnQty(
+                                        addon.name,
+                                        addon.price,
+                                        Number(e.target.value || 1)
+                                      )
+                                    }
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeItem(index)}
-                  disabled={items.length <= 1}
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                  aria-label="Remove"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
             {errors.items?.message && (
               <p className="text-sm text-destructive">{errors.items.message}</p>
             )}

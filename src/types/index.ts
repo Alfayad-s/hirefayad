@@ -29,6 +29,30 @@ export interface ServiceDeliveryTime {
   premium: string;
 }
 
+export interface ServiceWhatsIncluded {
+  allTiers?: string[];
+  proAndAbove?: string[];
+  premiumOnly?: string[];
+}
+
+export interface ServiceAddOn {
+  name: string;
+  description?: string;
+  price: number;
+  currency?: string;
+}
+
+export interface ServiceFaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface ServiceProcessStep {
+  step?: number;
+  title: string;
+  description: string;
+}
+
 export interface Service {
   _id: string;
   title: string;
@@ -46,6 +70,18 @@ export interface Service {
   deliveryTime?: ServiceDeliveryTime;
   /** Optional list of technologies used */
   technologies?: string[];
+  /** Optional “what's included” breakdown */
+  whatsIncluded?: ServiceWhatsIncluded;
+  /** Optional “what's not included” points */
+  whatsNotIncluded?: string[];
+  /** Optional list of add-ons / upsells */
+  addOns?: ServiceAddOn[];
+  /** Optional FAQs for this service */
+  faqs?: ServiceFaqItem[];
+  /** Optional process steps explaining workflow */
+  process?: ServiceProcessStep[];
+  /** Optional guarantees list */
+  guarantees?: string[];
   /** Optional, plan-specific feature mapping used in admin */
   tieredFeatures?: ServiceTieredFeature[];
 }
@@ -61,6 +97,12 @@ export interface Coupon {
   createdAt?: Date;
 }
 
+export interface OrderItemAddOn {
+  name: string;
+  priceInr: number;
+  quantity: number;
+}
+
 /** Single line item in an order (one service + tier + quantity) */
 export interface OrderItem {
   serviceId: string;
@@ -68,6 +110,8 @@ export interface OrderItem {
   tier: ServiceTier;
   quantity: number;
   unitPriceInr: number;
+  /** Optional add-ons attached to this service line */
+  addOns?: OrderItemAddOn[];
 }
 
 /** Quote request / order status */
