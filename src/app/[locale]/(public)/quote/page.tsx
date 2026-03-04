@@ -7,15 +7,28 @@ import { GridBackground } from "@/components/home/grid-background";
 import { getServicesCollection, toJson } from "@/lib/db";
 import type { Service } from "@/types";
 
-type Props = { params: Promise<{ locale: string }> };
+type Props = {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ serviceId?: string; tier?: string }>;
+};
 
-export default async function QuotePage({ params }: Props) {
+export default async function QuotePage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
   const session = await auth();
 
+  const { serviceId: selectedServiceId, tier } = (await searchParams) ?? {};
+  const selectedTier =
+    tier === "basic" || tier === "pro" || tier === "premium"
+      ? tier
+      : undefined;
+
   if (!session?.user) {
-    redirect(`/${locale}/login?callbackUrl=/${locale}/quote`);
+    const base = new URL(`/${locale}/quote`, "http://dummy");
+    if (selectedServiceId) base.searchParams.set("serviceId", selectedServiceId);
+    if (selectedTier) base.searchParams.set("tier", selectedTier);
+    const callbackUrl = base.pathname + base.search;
+    redirect(`/${locale}/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
 
   const col = await getServicesCollection();
@@ -32,7 +45,12 @@ export default async function QuotePage({ params }: Props) {
           <p className="mb-8 text-muted-foreground">
             Select services and tiers. We&apos;ll send you a formal quotation shortly.
           </p>
-          <QuoteCheckoutForm locale={locale} services={list} />
+          <QuoteCheckoutForm
+            locale={locale}
+            services={list}
+            initialServiceId={selectedServiceId}
+            initialTier={selectedTier}
+          />
         </div>
       </main>
     </div>

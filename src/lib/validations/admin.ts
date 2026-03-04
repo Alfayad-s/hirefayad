@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const serviceTierSchema = z.enum(["basic", "pro", "premium"]);
+
 export const serviceSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(2000),
@@ -9,6 +11,41 @@ export const serviceSchema = z.object({
     pro: z.number().int().min(0),
     premium: z.number().int().min(0),
   }),
+  shortTagline: z.string().min(1).max(260).optional(),
+  currency: z
+    .string()
+    .min(1)
+    .max(10)
+    .optional()
+    .transform((v) => v || "INR"),
+  deliveryTime: z
+    .object({
+      basic: z.string().min(1).max(100),
+      pro: z.string().min(1).max(100),
+      premium: z.string().min(1).max(100),
+    })
+    .partial()
+    .optional(),
+  technologies: z
+    .array(z.string().min(1).max(100))
+    .max(50)
+    .optional(),
+  image: z
+    .string()
+    .url()
+    .or(z.literal(""))
+    .optional()
+    .transform((value) => (value === "" ? undefined : value)),
+  // Optional, richer mapping of which features belong to which plans
+  tieredFeatures: z
+    .array(
+      z.object({
+        text: z.string().min(1).max(200),
+        tiers: z.array(serviceTierSchema).min(1).max(3),
+      })
+    )
+    .max(50)
+    .optional(),
 });
 
 export const couponSchema = z.object({

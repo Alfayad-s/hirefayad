@@ -15,6 +15,20 @@ export interface ServicePricing {
   premium: number;
 }
 
+/** Tier for a service in an order */
+export type ServiceTier = "basic" | "pro" | "premium";
+
+export interface ServiceTieredFeature {
+  text: string;
+  tiers: ServiceTier[];
+}
+
+export interface ServiceDeliveryTime {
+  basic: string;
+  pro: string;
+  premium: string;
+}
+
 export interface Service {
   _id: string;
   title: string;
@@ -22,6 +36,18 @@ export interface Service {
   features: string[];
   pricing: ServicePricing;
   createdAt: Date;
+  /** Optional marketing image for the service */
+  image?: string;
+  /** Optional short tagline shown in marketing sections */
+  shortTagline?: string;
+  /** Currency code, e.g. INR, USD */
+  currency?: string;
+  /** Optional delivery time estimates per tier */
+  deliveryTime?: ServiceDeliveryTime;
+  /** Optional list of technologies used */
+  technologies?: string[];
+  /** Optional, plan-specific feature mapping used in admin */
+  tieredFeatures?: ServiceTieredFeature[];
 }
 
 export interface Coupon {
@@ -34,9 +60,6 @@ export interface Coupon {
   isActive: boolean;
   createdAt?: Date;
 }
-
-/** Tier for a service in an order */
-export type ServiceTier = "basic" | "pro" | "premium";
 
 /** Single line item in an order (one service + tier + quantity) */
 export interface OrderItem {

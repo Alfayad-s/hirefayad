@@ -7,9 +7,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { serviceSchema, type ServiceInput } from "@/lib/validations/admin";
 import type { Service } from "@/types";
 import {
-  Zap, Sparkles, Crown, Plus, Trash2, ArrowLeft,
-  CheckCircle2, AlertCircle, Package, FileText, List,
-  DollarSign, Loader2, GripVertical, Eye, Check,
+  Zap,
+  Sparkles,
+  Crown,
+  Plus,
+  Trash2,
+  ArrowLeft,
+  CheckCircle2,
+  AlertCircle,
+  Package,
+  FileText,
+  List,
+  DollarSign,
+  Loader2,
+  GripVertical,
+  Eye,
+  Check,
+  Layers,
+  Image as ImageIcon,
+  Upload,
+  Link2,
+  Rows,
 } from "lucide-react";
 
 type Props = {
@@ -52,6 +70,11 @@ export function AdminServiceForm({ locale, service }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [activePreviewTier, setActivePreviewTier] = useState<keyof typeof TIER_CONFIG>("pro");
+  const [imageMode, setImageMode] = useState<"url" | "upload">("url");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [showBulkFeatures, setShowBulkFeatures] = useState(false);
+  const [bulkFeaturesText, setBulkFeaturesText] = useState("");
   const isEdit = !!service;
 
   const {
@@ -68,25 +91,105 @@ export function AdminServiceForm({ locale, service }: Props) {
           description: service.description,
           features: service.features.length ? service.features : [""],
           pricing: service.pricing,
+          tieredFeatures: service.tieredFeatures ?? [],
+          image: service.image ?? "",
+          shortTagline: service.shortTagline ?? "",
+          currency: service.currency ?? "INR",
+          deliveryTime: service.deliveryTime ?? {
+            basic: "",
+            pro: "",
+            premium: "",
+          },
+          technologies: service.technologies ?? [],
         }
       : {
           title: "",
           description: "",
           features: [""],
           pricing: { basic: 0, pro: 0, premium: 0 },
+          tieredFeatures: [],
+          image: "",
+          shortTagline: "",
+          currency: "INR",
+          deliveryTime: {
+            basic: "",
+            pro: "",
+            premium: "",
+          },
+          technologies: [],
         },
   });
 
   const features = watch("features");
+  const tieredFeatures = watch("tieredFeatures") ?? [];
   const watchedPricing = watch("pricing");
   const watchedTitle = watch("title");
   const watchedDescription = watch("description");
+  const watchedImage = watch("image");
+  const watchedCurrency = watch("currency");
+  const watchedDelivery = watch("deliveryTime");
+  const watchedTechnologies = watch("technologies") ?? [];
+
+  const handleApplyBulkFeatures = () => {
+    const lines = bulkFeaturesText
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+    if (!lines.length) return;
+    setValue("features", lines, { shouldDirty: true, shouldValidate: true });
+    setBulkFeaturesText("");
+    setShowBulkFeatures(false);
+  };
+
+  async function handleImageFile(file: File | null) {
+    if (!file) return;
+    setImageUploadError(null);
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setImageUploadError(data.error ?? "Failed to upload image");
+        return;
+      }
+      setValue("image", data.url, { shouldDirty: true });
+    } catch {
+      setImageUploadError("Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
 
   async function onSubmit(data: ServiceInput) {
     setError(null);
+
     const cleanFeatures = data.features.filter((f) => f.trim().length > 0);
-    if (cleanFeatures.length === 0) { setError("Add at least one feature."); return; }
-    const payload = { ...data, features: cleanFeatures };
+    if (cleanFeatures.length === 0) {
+      setError("Add at least one feature.");
+      return;
+    }
+
+    const cleanTiered =
+      (data.tieredFeatures ?? [])
+        .map((f) => ({
+          text: f.text.trim(),
+          tiers: Array.from(new Set(f.tiers)),
+        }))
+        .filter((f) => f.text.length > 0 && f.tiers.length > 0);
+
+    const payload: ServiceInput = {
+      ...data,
+      features: cleanFeatures,
+      tieredFeatures: cleanTiered.length > 0 ? cleanTiered : undefined,
+      technologies:
+        (data.technologies ?? []).map((t) => t.trim()).filter((t) => t.length > 0) ||
+        undefined,
+    };
     const url = isEdit ? `/api/admin/services/${service!._id}` : "/api/admin/services";
     const method = isEdit ? "PUT" : "POST";
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -100,6 +203,20 @@ export function AdminServiceForm({ locale, service }: Props) {
   const PreviewIcon = previewCfg.icon;
   const previewPrice = watchedPricing?.[activePreviewTier] || 0;
   const cleanFeatures = features.filter((f) => f.trim().length > 0);
+  const cleanTieredForActive = (tieredFeatures ?? [])
+    .filter(
+      (f) =>
+        typeof f?.text === "string" &&
+        f.text.trim().length > 0 &&
+        Array.isArray(f.tiers) &&
+        f.tiers.includes(activePreviewTier)
+    )
+    .map((f) => f.text.trim());
+  // Show common features for the service + any extra plan‑specific ones for the active tier
+  const previewFeatures = [
+    ...cleanFeatures,
+    ...cleanTieredForActive.filter((text) => !cleanFeatures.includes(text)),
+  ];
 
   return (
     <>
@@ -413,6 +530,145 @@ export function AdminServiceForm({ locale, service }: Props) {
                     <textarea className="asf-textarea" placeholder="Describe what this service includes…" {...register("description")} />
                     {errors.description && <div className="asf-field-error"><AlertCircle size={11} strokeWidth={2} />{errors.description.message}</div>}
                   </div>
+                  <div>
+                    <label className="asf-label">Short tagline (optional)</label>
+                    <input
+                      className="asf-input"
+                      placeholder="Turn your work into a powerful personal brand"
+                      {...register("shortTagline")}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Service image */}
+              <div className="asf-section">
+                <div className="asf-section-header">
+                  <div className="asf-section-icon"><ImageIcon size={14} color="#818cf8" strokeWidth={2} /></div>
+                  <span className="asf-section-title">Service image</span>
+                </div>
+                <div className="asf-section-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
+                    <button
+                      type="button"
+                      onClick={() => setImageMode("url")}
+                      style={{
+                        flex: 1,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        padding: "7px 10px",
+                        borderRadius: 999,
+                        border: "1px solid",
+                        borderColor:
+                          imageMode === "url" ? "rgba(129,140,248,0.8)" : "rgba(255,255,255,0.12)",
+                        background:
+                          imageMode === "url" ? "rgba(79,70,229,0.12)" : "transparent",
+                        color:
+                          imageMode === "url" ? "#e5e7eb" : "rgba(229,231,235,0.7)",
+                        fontSize: 11.5,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Link2 size={12} />
+                      URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageMode("upload")}
+                      style={{
+                        flex: 1,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        padding: "7px 10px",
+                        borderRadius: 999,
+                        border: "1px solid",
+                        borderColor:
+                          imageMode === "upload" ? "rgba(129,140,248,0.8)" : "rgba(255,255,255,0.12)",
+                        background:
+                          imageMode === "upload" ? "rgba(79,70,229,0.12)" : "transparent",
+                        color:
+                          imageMode === "upload" ? "#e5e7eb" : "rgba(229,231,235,0.7)",
+                        fontSize: 11.5,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Upload size={12} />
+                      Upload
+                    </button>
+                  </div>
+
+                  {imageMode === "url" ? (
+                    <div>
+                      <label className="asf-label">Image URL</label>
+                      <input
+                        className="asf-input"
+                        placeholder="https://…"
+                        {...register("image")}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="asf-label">Upload image (Cloudinary)</label>
+                      <label
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 6,
+                          borderRadius: 12,
+                          border: "1px dashed rgba(255,255,255,0.25)",
+                          padding: 16,
+                          cursor: "pointer",
+                          background: "rgba(15,23,42,0.7)",
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          onChange={(e) => handleImageFile(e.target.files?.[0] ?? null)}
+                        />
+                        <Upload size={18} />
+                        <span style={{ fontSize: 12, color: "rgba(229,231,235,0.8)" }}>
+                          {uploadingImage ? "Uploading…" : "Click to choose an image file"}
+                        </span>
+                      </label>
+                      {imageUploadError && (
+                        <div className="asf-field-error" style={{ marginTop: 6 }}>
+                          <AlertCircle size={11} strokeWidth={2} />
+                          {imageUploadError}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {watchedImage && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        borderRadius: 12,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        overflow: "hidden",
+                        background: "rgba(15,23,42,0.9)",
+                      }}
+                    >
+                      <img
+                        src={watchedImage}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          maxHeight: 200,
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -439,7 +695,169 @@ export function AdminServiceForm({ locale, service }: Props) {
                   <button type="button" className="asf-add-feat" onClick={() => setValue("features", [...features, ""])}>
                     <Plus size={14} strokeWidth={2.5} /> Add feature
                   </button>
+                  <button
+                    type="button"
+                    className="asf-add-feat"
+                    style={{
+                      marginTop: 6,
+                      borderStyle: "dashed",
+                      background: "transparent",
+                      borderColor: "rgba(129,140,248,0.4)",
+                    }}
+                    onClick={() => setShowBulkFeatures((v) => !v)}
+                  >
+                    <Rows size={14} strokeWidth={2.4} />
+                    {showBulkFeatures ? "Hide bulk add" : "Bulk add from text"}
+                  </button>
+                  {showBulkFeatures && (
+                    <div style={{ marginTop: 10 }}>
+                      <label className="asf-label">Paste features (one per line)</label>
+                      <textarea
+                        className="asf-textarea"
+                        rows={4}
+                        placeholder={`Homepage\nAbout page\nContact form`}
+                        value={bulkFeaturesText}
+                        onChange={(e) => setBulkFeaturesText(e.target.value)}
+                      />
+                      <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                        <button
+                          type="button"
+                          className="asf-submit"
+                          style={{ padding: "6px 14px", fontSize: 13 }}
+                          onClick={handleApplyBulkFeatures}
+                        >
+                          Apply features
+                        </button>
+                        <button
+                          type="button"
+                          className="asf-cancel"
+                          style={{ padding: "6px 14px", fontSize: 13 }}
+                          onClick={() => {
+                            setShowBulkFeatures(false);
+                            setBulkFeaturesText("");
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {errors.features && <div className="asf-field-error" style={{ marginTop: 8 }}><AlertCircle size={11} strokeWidth={2} />{errors.features.message as string}</div>}
+                </div>
+              </div>
+
+              {/* Plan-specific features (optional) */}
+              <div className="asf-section">
+                <div className="asf-section-header">
+                  <div className="asf-section-icon"><Layers size={14} color="#818cf8" strokeWidth={2} /></div>
+                  <span className="asf-section-title">Plan-specific features (optional)</span>
+                </div>
+                <div className="asf-section-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {tieredFeatures.map((feat, i) => (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 4 }}>
+                      <div className="asf-feature-row" style={{ marginBottom: 0 }}>
+                        <div className="asf-feat-wrap">
+                          <span className="asf-feat-idx">{String(i + 1).padStart(2, "0")}</span>
+                          <input
+                            className="asf-feat-input"
+                            placeholder={`Feature ${i + 1}…`}
+                            {...register(`tieredFeatures.${i}.text` as const)}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="asf-remove-btn"
+                          onClick={() =>
+                            setValue(
+                              "tieredFeatures",
+                              tieredFeatures.filter((_, j) => j !== i)
+                            )
+                          }
+                        >
+                          <Trash2 size={13} strokeWidth={2} />
+                        </button>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingLeft: 28 }}>
+                        {(["basic", "pro", "premium"] as const).map((tierKey) => {
+                          const tierCfg = TIER_CONFIG[tierKey];
+                          const selected = feat.tiers?.includes(tierKey);
+                          const Icon = tierCfg.icon;
+                          return (
+                            <button
+                              key={tierKey}
+                              type="button"
+                              onClick={() => {
+                                const current = tieredFeatures[i]?.tiers ?? [];
+                                const next = selected
+                                  ? current.filter((t) => t !== tierKey)
+                                  : [...current, tierKey];
+                                const updated = tieredFeatures.map((f, idx) =>
+                                  idx === i ? { ...f, tiers: next } : f
+                                );
+                                setValue("tieredFeatures", updated, { shouldDirty: true });
+                              }}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                padding: "4px 10px",
+                                borderRadius: 999,
+                                border: "1px solid",
+                                borderColor: selected ? tierCfg.border : "rgba(255,255,255,0.14)",
+                                background: selected ? tierCfg.bg : "transparent",
+                                color: selected ? tierCfg.color : "rgba(255,255,255,0.6)",
+                                fontSize: 11.5,
+                                cursor: "pointer",
+                              }}
+                            >
+                              <Icon size={11} strokeWidth={2.4} />
+                              {tierCfg.label}
+                              {selected && <Check size={11} strokeWidth={2.5} />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="asf-add-feat"
+                    onClick={() =>
+                      setValue("tieredFeatures", [
+                        ...tieredFeatures,
+                        { text: "", tiers: ["basic"] },
+                      ])
+                    }
+                  >
+                    <Plus size={14} strokeWidth={2.5} /> Add plan feature
+                  </button>
+                </div>
+              </div>
+
+              {/* Technologies (optional) */}
+              <div className="asf-section">
+                <div className="asf-section-header">
+                  <div className="asf-section-icon"><Layers size={14} color="#818cf8" strokeWidth={2} /></div>
+                  <span className="asf-section-title">Technologies (optional)</span>
+                </div>
+                <div className="asf-section-body">
+                  <label className="asf-label">Tech stack</label>
+                  <textarea
+                    className="asf-textarea"
+                    rows={3}
+                    placeholder="One technology per line, e.g.&#10;React / Next.js&#10;Tailwind CSS&#10;Node.js API"
+                    value={watchedTechnologies.join("\n")}
+                    onChange={(e) =>
+                      setValue(
+                        "technologies",
+                        e.target.value
+                          .split(/\r?\n/)
+                          .map((x) => x.trim())
+                          .filter((x) => x.length > 0),
+                        { shouldDirty: true }
+                      )
+                    }
+                  />
                 </div>
               </div>
 
@@ -447,9 +865,17 @@ export function AdminServiceForm({ locale, service }: Props) {
               <div className="asf-section">
                 <div className="asf-section-header">
                   <div className="asf-section-icon"><DollarSign size={14} color="#818cf8" strokeWidth={2} /></div>
-                  <span className="asf-section-title">Pricing Tiers</span>
+                  <span className="asf-section-title">Pricing & delivery</span>
                 </div>
                 <div className="asf-section-body">
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8, gap: 8 }}>
+                    <span className="asf-label" style={{ marginBottom: 0 }}>Currency</span>
+                    <input
+                      className="asf-input"
+                      style={{ maxWidth: 90, paddingInline: 10, textTransform: "uppercase" }}
+                      {...register("currency")}
+                    />
+                  </div>
                   <div className="asf-pricing-grid">
                     {(Object.entries(TIER_CONFIG) as [keyof typeof TIER_CONFIG, typeof TIER_CONFIG[keyof typeof TIER_CONFIG]][]).map(([key, cfg]) => {
                       const TierIcon = cfg.icon;
@@ -464,6 +890,15 @@ export function AdminServiceForm({ locale, service }: Props) {
                             <span className="asf-currency-sym" style={{ color: cfg.color }}>₹</span>
                             <input type="number" min={0} className="asf-price-num" style={{ color: cfg.color }}
                               {...register(`pricing.${key}`, { valueAsNumber: true })} />
+                          </div>
+                          <div style={{ padding: "0 13px 12px", fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+                            <span style={{ opacity: 0.7 }}>Delivery:</span>{" "}
+                            <input
+                              className="asf-input"
+                              style={{ marginTop: 4, fontSize: 11, paddingBlock: 6 }}
+                              placeholder="e.g. 7-10 working days"
+                              {...register(`deliveryTime.${key}` as const)}
+                            />
                           </div>
                           {hasError && <div className="asf-field-error" style={{ padding: "0 13px 10px" }}><AlertCircle size={11} strokeWidth={2} />{hasError.message}</div>}
                         </div>
@@ -555,8 +990,8 @@ export function AdminServiceForm({ locale, service }: Props) {
 
                 {/* Features */}
                 <div className="asf-card-features">
-                  {cleanFeatures.length > 0 ? (
-                    cleanFeatures.map((feat, i) => (
+                  {previewFeatures.length > 0 ? (
+                    previewFeatures.map((feat, i) => (
                       <div key={i} className="asf-card-feat">
                         <div className="asf-feat-bullet" style={{ background: previewCfg.bg, border: `1px solid ${previewCfg.border}` }}>
                           <Check size={10} strokeWidth={3} color={previewCfg.color} />

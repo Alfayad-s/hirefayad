@@ -23,7 +23,16 @@ export function ServiceCard({ service, locale }: ServiceCardProps) {
   const startingPrice = usePrice(minPrice);
 
   return (
-    <Card className="flex h-full flex-col border-2">
+    <Card className="flex h-full flex-col border-2 overflow-hidden">
+      {service.image && (
+        <div className="relative aspect-[4/3] w-full overflow-hidden">
+          <img
+            src={service.image}
+            alt={service.title}
+            className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+          />
+        </div>
+      )}
       <CardHeader>
         <CardTitle className="text-xl">{service.title}</CardTitle>
         <p className="text-sm text-muted-foreground">{service.description}</p>

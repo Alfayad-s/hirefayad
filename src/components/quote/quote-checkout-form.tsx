@@ -15,6 +15,8 @@ import type { Service } from "@/types";
 type QuoteCheckoutFormProps = {
   locale: string;
   services: (Service & { _id: string })[];
+  initialServiceId?: string;
+  initialTier?: "basic" | "pro" | "premium";
 };
 
 const TIERS: Array<"basic" | "pro" | "premium"> = ["basic", "pro", "premium"];
@@ -44,6 +46,7 @@ function PlanCard({
 }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [transform, setTransform] = useState("perspective(1000px)");
+  const isDarkCard = tierMeta.id === "basic" || tierMeta.id === "premium";
 
   function handleMouseMove(e: React.MouseEvent<HTMLButtonElement>) {
     const el = ref.current;
@@ -105,12 +108,29 @@ function PlanCard({
             </span>
           )}
         </div>
-        <div className="text-xl font-bold text-foreground">{priceLabel}</div>
-        <p className="text-xs text-muted-foreground">One-time project</p>
+        <div
+          className={`text-xl font-bold ${
+            isDarkCard ? "text-zinc-50" : "text-foreground"
+          }`}
+        >
+          {priceLabel}
+        </div>
+        <p
+          className={`text-xs ${
+            isDarkCard ? "text-zinc-200" : "text-muted-foreground"
+          }`}
+        >
+          One-time project
+        </p>
         {features.length > 0 && (
           <ul className="mt-1 space-y-1.5 border-t border-border/50 pt-3">
             {features.map((text, i) => (
-              <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+              <li
+                key={i}
+                className={`flex items-center gap-2 text-xs ${
+                  isDarkCard ? "text-zinc-100" : "text-muted-foreground"
+                }`}
+              >
                 <Check className="size-3.5 shrink-0 text-primary" />
                 {text}
               </li>
@@ -122,7 +142,12 @@ function PlanCard({
   );
 }
 
-export function QuoteCheckoutForm({ locale, services }: QuoteCheckoutFormProps) {
+export function QuoteCheckoutForm({
+  locale,
+  services,
+  initialServiceId,
+  initialTier,
+}: QuoteCheckoutFormProps) {
   const t = useTranslations("Quote");
   const tCoupon = useTranslations("Coupon");
   const router = useRouter();
@@ -138,6 +163,14 @@ export function QuoteCheckoutForm({ locale, services }: QuoteCheckoutFormProps) 
     premium: t("premium"),
   };
 
+  const initialService =
+    initialServiceId != null
+      ? services.find((s) => s._id === initialServiceId)
+      : undefined;
+  const defaultServiceId =
+    services.length > 0 ? (initialService?._id ?? services[0]._id) : undefined;
+  const defaultTier: "basic" | "pro" | "premium" = initialTier ?? "pro";
+
   const {
     register,
     handleSubmit,
@@ -148,8 +181,8 @@ export function QuoteCheckoutForm({ locale, services }: QuoteCheckoutFormProps) 
     resolver: zodResolver(quoteRequestSchema),
     defaultValues: {
       items:
-        services.length > 0
-          ? [{ serviceId: services[0]._id, tier: "pro", quantity: 1 }]
+        services.length > 0 && defaultServiceId
+          ? [{ serviceId: defaultServiceId, tier: defaultTier, quantity: 1 }]
           : [],
       couponCode: "",
     },
@@ -157,6 +190,42 @@ export function QuoteCheckoutForm({ locale, services }: QuoteCheckoutFormProps) 
 
   const items = watch("items") ?? [];
   const selectedTier = items[0]?.tier ?? "pro";
+
+  // Ensure the initially requested service (from home page) is selected
+  // even after hydration/client navigation.
+  useEffect(() => {
+    if (!initialServiceId) return;
+    const exists = services.some((s) => s._id === initialServiceId);
+    if (!exists) return;
+    const currentItems = (watch("items") ?? []) as QuoteRequestInput["items"];
+    if (!currentItems.length) {
+      setValue(
+        "items",
+        [{ serviceId: initialServiceId, tier: "pro", quantity: 1 }],
+        { shouldValidate: true }
+      );
+      return;
+    }
+    if (currentItems[0]?.serviceId === initialServiceId) return;
+    const [, ...rest] = currentItems;
+    setValue(
+      "items",
+      [
+        {
+          ...currentItems[0],
+          serviceId: initialServiceId,
+        },
+        ...rest,
+      ],
+      { shouldValidate: true }
+    );
+  }, [initialServiceId, services, watch, setValue]);
+
+  // Keep plan cards in sync with the primary selected service
+  // instead of showing a global minimum across all services.
+  const primaryServiceId = items[0]?.serviceId;
+  const primaryService =
+    services.find((s) => s._id === primaryServiceId) ?? services[0] ?? null;
 
   useEffect(() => {
     fetch("/api/coupons/available")
@@ -290,13 +359,9 @@ export function QuoteCheckoutForm({ locale, services }: QuoteCheckoutFormProps) 
   const subtotalFormatted = usePrice(subtotalInr);
   const discountFormatted = usePrice(discountAmountInr);
   const totalFormatted = usePrice(totalInr);
-
-  const minPriceBasic = services.length ? Math.min(...services.map((s) => s.pricing.basic)) : 0;
-  const minPricePro = services.length ? Math.min(...services.map((s) => s.pricing.pro)) : 0;
-  const minPricePremium = services.length ? Math.min(...services.map((s) => s.pricing.premium)) : 0;
-  const basicPriceLabel = usePrice(minPriceBasic);
-  const proPriceLabel = usePrice(minPricePro);
-  const premiumPriceLabel = usePrice(minPricePremium);
+  const basicPriceLabel = usePrice(primaryService?.pricing.basic ?? 0);
+  const proPriceLabel = usePrice(primaryService?.pricing.pro ?? 0);
+  const premiumPriceLabel = usePrice(primaryService?.pricing.premium ?? 0);
 
   return (
     <div className="w-full">
