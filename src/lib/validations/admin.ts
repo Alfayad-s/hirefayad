@@ -18,13 +18,13 @@ export const serviceSchema = z.object({
     .max(10)
     .optional()
     .transform((v) => v || "INR"),
+  // Optional per-tier delivery estimates; when present, all three tiers should be provided
   deliveryTime: z
     .object({
-      basic: z.string().min(1).max(100),
-      pro: z.string().min(1).max(100),
-      premium: z.string().min(1).max(100),
+      basic: z.string().max(100),
+      pro: z.string().max(100),
+      premium: z.string().max(100),
     })
-    .partial()
     .optional(),
   technologies: z
     .array(z.string().min(1).max(100))
