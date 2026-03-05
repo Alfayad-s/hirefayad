@@ -1,11 +1,23 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Zap } from "lucide-react";
+import GithubIcon from "@/components/ui/github-icon";
+import LinkedinIcon from "@/components/ui/linkedin-icon";
+import TwitterIcon from "@/components/ui/twitter-icon";
+import { useTheme } from "@/components/providers/theme-provider";
+
+const SOCIAL = {
+  github: "https://github.com",
+  linkedin: "https://linkedin.com",
+  twitter: "https://x.com",
+} as const;
 
 export function PublicFooter() {
   const t = useTranslations("Footer");
+  const { theme } = useTheme();
   const year = new Date().getFullYear();
 
   return (
@@ -36,11 +48,74 @@ export function PublicFooter() {
             >
               {t("coupon")}
             </Link>
+            <Link
+              href="/privacy"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("privacy")}
+            </Link>
+            <Link
+              href="/terms"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("terms")}
+            </Link>
           </nav>
       </div>
 
-      <div className="mt-8 border-t border-border pt-8">
-        <p className="text-center text-sm text-muted-foreground md:text-left">
+      {/* Full-width: call-me image (left) + small label & big "Alfayad" (right) — below nav */}
+      <div className="w-full max-w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mt-8 mb-8 overflow-hidden px-0">
+        <div className="relative shrink-0 w-[320px] h-[427px] sm:w-[400px] sm:h-[533px] md:w-[480px] md:h-[640px]">
+          <Image
+            src={theme === "light" ? "/call-me-white.png" : "/call-me.png"}
+            alt=""
+            fill
+            className="object-contain object-center -scale-x-100"
+            sizes="(max-width: 640px) 320px, (max-width: 768px) 400px, 480px"
+          />
+        </div>
+        <div className="text-center sm:text-left">
+          <span className="block text-sm md:text-base text-muted-foreground">
+            {t("serviceProvidedBy")}
+          </span>
+          <span className="block w-full text-[clamp(3.5rem,16vw,8rem)] sm:text-[clamp(4.5rem,20vw,11rem)] md:text-[clamp(5.5rem,22vw,14rem)] lg:text-[clamp(7rem,26vw,18rem)] font-black tracking-tighter text-yellow-500 dark:text-yellow-400 leading-none mt-1">
+            {t("alfayad")}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-8 border-t border-border pt-8 flex flex-wrap items-center justify-center gap-6 md:justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-muted-foreground">{t("follow")}</span>
+          <a
+            href={SOCIAL.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground transition-colors hover:text-foreground [&_svg]:size-5"
+            aria-label="GitHub"
+          >
+            <GithubIcon />
+          </a>
+          <a
+            href={SOCIAL.linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground transition-colors hover:text-foreground [&_svg]:size-5"
+            aria-label="LinkedIn"
+          >
+            <LinkedinIcon />
+          </a>
+          <a
+            href={SOCIAL.twitter}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground transition-colors hover:text-foreground [&_svg]:size-5"
+            aria-label="X (Twitter)"
+          >
+            <TwitterIcon />
+          </a>
+        </div>
+        <p className="text-center text-sm text-muted-foreground md:text-right">
           © {year} ServiceFunnel. {t("rights")}
         </p>
       </div>

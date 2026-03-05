@@ -6,7 +6,9 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroAuthButtons } from "@/components/home/hero-auth-buttons";
 import { PublicHeader } from "@/components/layout/public-header";
+import { PublicFooter } from "@/components/layout/public-footer";
 import { AboutSection } from "@/components/home/about-section";
+import { MoreSection } from "@/components/home/more-section";
 import { WelcomeModal } from "@/components/home/welcome-modal";
 import { GridBackground } from "@/components/home/grid-background";
 import { ScrollToSection } from "@/components/home/scroll-to-section";
@@ -164,6 +166,9 @@ export default async function HomePage({ params }: Props) {
 
         {/* ── ABOUT US ── */}
         <AboutSection />
+        {/* ── MORE / WHAT TO EXPECT ── */}
+        <MoreSection />
+        <PublicFooter />
       </main>
     </div>
   );

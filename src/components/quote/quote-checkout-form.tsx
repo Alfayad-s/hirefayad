@@ -12,6 +12,7 @@ import { LocaleLink } from "@/components/layout/locale-link";
 import { usePrice } from "@/hooks/use-price";
 import type { Service } from "@/types";
 import { PricingCardHorizontal, TIER_META } from "@/components/pricing-card-horizontal";
+import { triggerCouponConfetti } from "@/lib/confetti";
 
 type QuoteCheckoutFormProps = {
   locale: string;
@@ -215,6 +216,7 @@ export function QuoteCheckoutForm({
       if (data.valid && data.code) {
         setAppliedCoupon({ code: data.code, discountPercentage: data.discountPercentage });
         setValue("couponCode", data.code);
+        triggerCouponConfetti();
       } else {
         setAppliedCoupon(null);
         setValidateError(data.error ?? tCoupon("invalid"));
@@ -240,6 +242,7 @@ export function QuoteCheckoutForm({
       const data = await res.json();
       if (data.valid && data.code) {
         setAppliedCoupon({ code: data.code, discountPercentage: data.discountPercentage });
+        triggerCouponConfetti();
       } else {
         setAppliedCoupon(null);
         setValidateError(data.error ?? tCoupon("invalid"));

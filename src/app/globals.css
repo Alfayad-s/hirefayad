@@ -31,6 +31,8 @@
   --header-border-scrolled: rgba(0, 0, 0, 0.1);
   --header-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   --header-shadow-scrolled: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --scrollbar-thumb: #eab308;
+  --scrollbar-track: #f5f4f0;
 }
 
 @theme inline {
@@ -80,10 +82,36 @@
   --header-border-scrolled: rgba(255, 255, 255, 0.08);
   --header-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   --header-shadow-scrolled: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --scrollbar-thumb: #facc15;
+  --scrollbar-track: #1c1917;
 }
 
+/* Scrollbar: yellow thumb to match app theme */
+
+/* Firefox */
 * {
   border-color: var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* WebKit (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 body {

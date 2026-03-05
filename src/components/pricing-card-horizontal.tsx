@@ -38,6 +38,7 @@ export function PricingCardHorizontal({
   tier,
   label: labelProp,
   price,
+  originalPrice,
   features,
   highlight,
   selected,
@@ -49,6 +50,8 @@ export function PricingCardHorizontal({
   /** Override tier label (e.g. for translations) */
   label?: string;
   price: string;
+  /** When set, show original price with strikethrough and use price as discounted */
+  originalPrice?: string;
   features: string[];
   highlight?: boolean;
   selected?: boolean;
@@ -136,17 +139,24 @@ export function PricingCardHorizontal({
             }`}
           />
 
-          <span
-            className={`text-2xl font-black tabular-nums ${
-              highlight
-                ? "text-amber-600 dark:text-yellow-400"
-                : isDarkCard
-                  ? "text-zinc-50"
-                  : "text-foreground"
-            }`}
-          >
-            {price}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            {originalPrice && (
+              <span className="text-sm font-medium text-muted-foreground line-through tabular-nums">
+                {originalPrice}
+              </span>
+            )}
+            <span
+              className={`text-2xl font-black tabular-nums ${
+                highlight
+                  ? "text-amber-600 dark:text-yellow-400"
+                  : isDarkCard
+                    ? "text-zinc-50"
+                    : "text-foreground"
+              }`}
+            >
+              {price}
+            </span>
+          </div>
 
           <div className="flex-1" />
 

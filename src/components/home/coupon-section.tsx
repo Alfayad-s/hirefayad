@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { triggerCouponConfetti } from "@/lib/confetti";
 import type { Session } from "next-auth";
 
 type Props = { session?: Session | null };
@@ -38,6 +39,7 @@ export function CouponSection({ session = null }: Props) {
           message: data.message ?? t("applied"),
           discount: data.discountPercentage,
         });
+        triggerCouponConfetti();
       } else {
         setResult({
           type: "error",

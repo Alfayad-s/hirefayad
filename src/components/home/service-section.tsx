@@ -4,11 +4,13 @@ import { useTranslations } from "next-intl";
 import { LocaleLink } from "@/components/layout/locale-link";
 import { usePrice } from "@/hooks/use-price";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useRef, useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import type { Service } from "@/types";
 import type { Session } from "next-auth";
 import { PricingCardHorizontal, TIER_META } from "@/components/pricing-card-horizontal";
+import { triggerCouponConfetti } from "@/lib/confetti";
 
 type Props = {
   service: Service;
@@ -30,6 +32,7 @@ export function ServiceSection({
   variant = "home",
 }: Props) {
   const t = useTranslations("Services");
+  const tCoupon = useTranslations("Coupon");
   const minPrice = Math.min(
     service.pricing.basic,
     service.pricing.pro,
@@ -44,6 +47,47 @@ export function ServiceSection({
   const [visible, setVisible] = useState(false);
   const [selectedTier, setSelectedTier] =
     useState<"basic" | "pro" | "premium">("pro");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedDiscount, setAppliedDiscount] = useState<number | null>(null);
+
+  const discountMultiplier =
+    appliedDiscount != null ? (1 - appliedDiscount / 100) : 1;
+  const basicPriceDisc = usePrice(service.pricing.basic * discountMultiplier);
+  const proPriceDisc = usePrice(service.pricing.pro * discountMultiplier);
+  const premiumPriceDisc = usePrice(
+    service.pricing.premium * discountMultiplier
+  );
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = couponCode.trim().toUpperCase();
+    if (!code) return;
+    setCouponLoading(true);
+    setCouponError(null);
+    try {
+      const res = await fetch("/api/validate-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.valid && data.discountPercentage != null) {
+        setAppliedDiscount(data.discountPercentage);
+        setCouponCode(data.code ?? code);
+        triggerCouponConfetti();
+      } else {
+        setAppliedDiscount(null);
+        setCouponError(data.error ?? tCoupon("invalid"));
+      }
+    } catch {
+      setAppliedDiscount(null);
+      setCouponError(tCoupon("invalid"));
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -83,13 +127,15 @@ export function ServiceSection({
   const tiers = [
     {
       ...TIER_META_LOCAL[0],
-      price: basicPrice,
+      price: appliedDiscount != null ? basicPriceDisc : basicPrice,
+      originalPrice: appliedDiscount != null ? basicPrice : undefined,
       features: basicAll,
       delivery: service.deliveryTime?.basic,
     },
     {
       ...TIER_META_LOCAL[1],
-      price: proPrice,
+      price: appliedDiscount != null ? proPriceDisc : proPrice,
+      originalPrice: appliedDiscount != null ? proPrice : undefined,
       highlight: true as const,
       features: proExtras,
       includeLabel: basicAll.length ? "Includes everything in Basic plan" : undefined,
@@ -97,13 +143,15 @@ export function ServiceSection({
     },
     {
       ...TIER_META_LOCAL[2],
-      price: premiumPrice,
+      price: appliedDiscount != null ? premiumPriceDisc : premiumPrice,
+      originalPrice: appliedDiscount != null ? premiumPrice : undefined,
       features: premiumExtras,
       includeLabel: proAll.length ? "Includes everything in Pro plan" : undefined,
       delivery: service.deliveryTime?.premium,
     },
   ] as (typeof TIER_META_LOCAL[number] & {
     price: string;
+    originalPrice?: string;
     features: string[];
     includeLabel?: string;
     delivery?: string;
@@ -300,6 +348,7 @@ export function ServiceSection({
                 <PricingCardHorizontal
                   tier={tier}
                   price={tier.price}
+                  originalPrice={tier.originalPrice}
                   features={tier.features}
                   highlight={tier.highlight}
                   selected={selectedTier === tier.id}
@@ -309,6 +358,45 @@ export function ServiceSection({
                 />
               </div>
             ))}
+          </div>
+
+          {/* Coupon field: apply to check price */}
+          <div
+            className="mt-4 rounded-2xl border border-border bg-card/50 p-4"
+            style={{
+              opacity: visible ? 1 : 0,
+              transform: visible ? "translateY(0)" : "translateY(12px)",
+              transition: "opacity 0.5s ease 0.35s, transform 0.5s ease 0.35s",
+            }}
+          >
+            <form onSubmit={handleApplyCoupon} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <label className="text-sm font-medium text-foreground sm:shrink-0">
+                {t("applyCoupon")}
+              </label>
+              <div className="flex flex-1 gap-2">
+                <Input
+                  placeholder={tCoupon("placeholder")}
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase());
+                    setCouponError(null);
+                  }}
+                  className="flex-1 min-w-0"
+                  disabled={couponLoading}
+                />
+                <Button type="submit" disabled={couponLoading} className="shrink-0">
+                  {couponLoading ? "..." : tCoupon("apply")}
+                </Button>
+              </div>
+            </form>
+            {couponError && (
+              <p className="mt-2 text-sm text-destructive">{couponError}</p>
+            )}
+            {appliedDiscount != null && !couponError && (
+              <p className="mt-2 text-sm text-primary">
+                {tCoupon("applied")} — {appliedDiscount}% off
+              </p>
+            )}
           </div>
 
           {/* What's included / not included, add-ons, FAQ, process, guarantees */}
