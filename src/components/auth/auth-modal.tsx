@@ -67,7 +67,7 @@ export function AuthModal({
             className="text-lg font-bold tracking-tight text-foreground"
             style={{ letterSpacing: "-0.02em" }}
           >
-            Service<span className="text-yellow-500 dark:text-yellow-400">Funnel</span>
+            Hire<span className="text-yellow-500 dark:text-yellow-400">Fayad</span>
           </span>
         </div>
 

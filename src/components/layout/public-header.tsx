@@ -114,7 +114,7 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
                 className={`truncate text-sm font-black tracking-tight text-foreground sm:text-base ${session?.user ? "hidden sm:inline" : "inline"}`}
                 style={{ letterSpacing: "-0.02em" }}
               >
-                Service<span className="text-yellow-500 dark:text-yellow-400">Funnel</span>
+                Hire<span className="text-yellow-500 dark:text-yellow-400">Fayad</span>
               </span>
             </Link>
             </div>

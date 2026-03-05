@@ -28,14 +28,14 @@ export default async function TermsPage({ params }: Props) {
             <section>
               <h2 className="text-xl font-semibold text-foreground">1. Agreement to Terms</h2>
               <p className="mt-2 leading-relaxed">
-                By accessing or using ServiceFunnel (&quot;the Service&quot;), you agree to be bound by these Terms and Conditions. If you do not agree, do not use the Service. We reserve the right to modify these terms at any time; continued use after changes constitutes acceptance.
+                By accessing or using Hire Fayad (&quot;the Service&quot;), you agree to be bound by these Terms and Conditions. If you do not agree, do not use the Service. We reserve the right to modify these terms at any time; continued use after changes constitutes acceptance.
               </p>
             </section>
 
             <section>
               <h2 className="text-xl font-semibold text-foreground">2. Description of Service</h2>
               <p className="mt-2 leading-relaxed">
-                ServiceFunnel provides web development services, including but not limited to website and web application design, development, and related offerings. Quotes are provided for information and are subject to the final agreement between you and the service provider. Use of coupons and discounts is subject to their specific terms and validity.
+                Hire Fayad provides web development services, including but not limited to website and web application design, development, and related offerings. Quotes are provided for information and are subject to the final agreement between you and the service provider. Use of coupons and discounts is subject to their specific terms and validity.
               </p>
             </section>
 
@@ -84,7 +84,7 @@ export default async function TermsPage({ params }: Props) {
             <section>
               <h2 className="text-xl font-semibold text-foreground">9. Limitation of Liability</h2>
               <p className="mt-2 leading-relaxed">
-                To the fullest extent permitted by law, ServiceFunnel and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or for loss of profits, data, or goodwill, arising from your use of the Service or any project conducted through it. Liability for direct damages shall be limited to the amount you paid for the specific service in question, where applicable.
+                To the fullest extent permitted by law, Hire Fayad and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or for loss of profits, data, or goodwill, arising from your use of the Service or any project conducted through it. Liability for direct damages shall be limited to the amount you paid for the specific service in question, where applicable.
               </p>
             </section>
 

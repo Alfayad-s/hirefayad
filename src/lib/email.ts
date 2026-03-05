@@ -6,10 +6,10 @@ function getResend() {
   return new Resend(key);
 }
 
-const FROM = process.env.EMAIL_FROM ?? "ServiceFunnel <onboarding@resend.dev>";
+const FROM = process.env.EMAIL_FROM ?? "Hire Fayad <onboarding@resend.dev>";
 const APP_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
-/** To send to real Gmail/outlook etc., add and verify your domain at https://resend.com/domains and set EMAIL_FROM e.g. "ServiceFunnel <noreply@yourdomain.com>" in .env.local */
+/** To send to real Gmail/outlook etc., add and verify your domain at https://resend.com/domains and set EMAIL_FROM e.g. "Hire Fayad <noreply@yourdomain.com>" in .env.local */
 
 export async function sendQuotationReadyEmail({
   to,
@@ -33,13 +33,13 @@ export async function sendQuotationReadyEmail({
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: [to],
-    subject: "Your quotation is ready – ServiceFunnel",
+    subject: "Your quotation is ready – Hire Fayad",
     html: `
       <p>Hi ${userName},</p>
       <p>Your quotation request (#${orderId.slice(-8)}) is ready.</p>
       <p><a href="${viewLink}" style="display:inline-block;background:#eab308;color:#000;padding:12px 24px;text-decoration:none;font-weight:bold;border-radius:9999px;">View quotation</a></p>
       <p>You can review the details and accept the quote when you're ready.</p>
-      <p>— ServiceFunnel</p>
+      <p>— Hire Fayad</p>
     `,
   });
   if (error) {
@@ -78,7 +78,7 @@ export async function sendBookingConfirmedEmail({
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: [to],
-    subject: "Booking confirmed – ServiceFunnel",
+    subject: "Booking confirmed – Hire Fayad",
     html: `
       <p>Hi ${userName},</p>
       <p>Thank you for accepting our quotation. Your booking is confirmed.</p>
@@ -86,7 +86,7 @@ export async function sendBookingConfirmedEmail({
       <p><strong>Services:</strong> ${itemsSummary}</p>
       <p><strong>Total:</strong> ${totalFormatted}</p>
       <p>We'll start processing your service and keep you updated.</p>
-      <p>— ServiceFunnel</p>
+      <p>— Hire Fayad</p>
     `,
   });
   if (error) {

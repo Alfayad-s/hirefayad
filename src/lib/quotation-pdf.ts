@@ -174,7 +174,7 @@ export async function generateQuotationPDF(
     }
   }
 
-  const companyName = (order.quotationCompanyName || "ServiceFunnel").trim();
+  const companyName = (order.quotationCompanyName || "Hire Fayad").trim();
   const hasCompany =
     companyName ||
     order.quotationCompanyAddress ||

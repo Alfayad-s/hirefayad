@@ -12,7 +12,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Service Funnel | Full Stack Development Services",
+  title: "Hire Fayad | Full Stack Development Services",
   description:
     "Professional web development services for students, startups, and businesses. Portfolio sites, e‑commerce, and custom full stack solutions.",
 };

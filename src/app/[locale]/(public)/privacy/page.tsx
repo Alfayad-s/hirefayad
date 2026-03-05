@@ -28,7 +28,7 @@ export default async function PrivacyPage({ params }: Props) {
             <section>
               <h2 className="text-xl font-semibold text-foreground">1. Introduction</h2>
               <p className="mt-2 leading-relaxed">
-                ServiceFunnel (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and services, including quote requests, account registration, and communications.
+                Hire Fayad (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and services, including quote requests, account registration, and communications.
               </p>
             </section>
 

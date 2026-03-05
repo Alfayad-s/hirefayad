@@ -496,7 +496,7 @@ export function AdminQuotationForm({
               value={quotationCompanyName}
               onChange={(e) => setQuotationCompanyName(e.target.value)}
               className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-              placeholder="e.g. ServiceFunnel"
+              placeholder="e.g. Hire Fayad"
             />
             <label className="mt-3 block text-sm font-medium">Address</label>
             <textarea

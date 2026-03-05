@@ -31,7 +31,7 @@ export function PublicFooter() {
               <Zap className="size-4 text-black fill-black" />
             </div>
             <span className="text-lg font-black tracking-tight">
-              Service<span className="text-yellow-500 dark:text-yellow-400">Funnel</span>
+              Hire<span className="text-yellow-500 dark:text-yellow-400">Fayad</span>
             </span>
           </Link>
 
@@ -116,7 +116,7 @@ export function PublicFooter() {
           </a>
         </div>
         <p className="text-center text-sm text-muted-foreground md:text-right">
-          © {year} ServiceFunnel. {t("rights")}
+          © {year} Hire Fayad. {t("rights")}
         </p>
       </div>
     </footer>
