@@ -11,7 +11,8 @@ const plusJakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "https://hirefayad.com";
+// Must be absolute HTTPS URL for WhatsApp/social crawlers. Set NEXT_PUBLIC_APP_URL in Vercel to match your deployment.
+const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "https://hirefayad.vercel.app").replace(/\/$/, "");
 const ogImageUrl = `${siteUrl}/og-image.png`;
 
 const jsonLd = {
@@ -82,8 +83,10 @@ export const metadata: Metadata = {
     images: [
       {
         url: ogImageUrl,
+        secureUrl: ogImageUrl,
         width: 1200,
         height: 630,
+        type: "image/png",
         alt: "Hire Fayad – Build Your Own Website. Book Now. Professional web development services.",
       },
     ],
@@ -92,7 +95,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Hire Fayad | Build Your Own Website – Book Now",
     description: "Professional web development. Portfolio, e‑commerce, custom web apps. Get a quote – hirefayad@gmail.com",
-    images: [ogImageUrl],
+    images: [{ url: ogImageUrl, width: 1200, height: 630, alt: "Hire Fayad – Build Your Own Website. Book Now." }],
   },
   robots: {
     index: true,
