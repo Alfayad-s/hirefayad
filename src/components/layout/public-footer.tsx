@@ -67,7 +67,7 @@ export function PublicFooter() {
       <div className="w-full max-w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mt-8 mb-8 overflow-hidden px-0">
         <div className="relative shrink-0 w-[320px] h-[427px] sm:w-[400px] sm:h-[533px] md:w-[480px] md:h-[640px]">
           <Image
-            src={theme === "light" ? "/call-me-white.png" : "/call-me.png"}
+            src="/call-me.png"
             alt=""
             fill
             className="object-contain object-center -scale-x-100"

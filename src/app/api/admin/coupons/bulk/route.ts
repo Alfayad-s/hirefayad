@@ -45,9 +45,10 @@ export async function POST(request: Request) {
       const msg = Object.entries(first)
         .map(([k, v]) => `${k}: ${Array.isArray(v) ? v[0] : v}`)
         .join("; ");
+      const item = raw[i] as Record<string, unknown> | null;
       validationErrors.push({
         index: i,
-        code: typeof raw[i] === "object" && raw[i] !== null && "code" in raw[i] ? String((raw[i] as { code?: unknown }).code) : undefined,
+        code: item != null && "code" in item ? String(item.code) : undefined,
         message: msg,
       });
       continue;

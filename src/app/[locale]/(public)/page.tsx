@@ -12,7 +12,7 @@ import { MoreSection } from "@/components/home/more-section";
 import { WelcomeModal } from "@/components/home/welcome-modal";
 import { GridBackground } from "@/components/home/grid-background";
 import { ScrollToSection } from "@/components/home/scroll-to-section";
-import { ServiceSection } from "@/components/home/service-section";
+import { ServicesListing } from "@/components/home/services-listing";
 import { getServicesCollection, toJson } from "@/lib/db";
 import { getServerT } from "@/lib/server-translations";
 import type { Service } from "@/types";
@@ -151,18 +151,8 @@ export default async function HomePage({ params }: Props) {
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
         </section>
 
-        {/* ── SERVICE SECTIONS (preview) ── */}
-        {list.map((service, index) => (
-          <ServiceSection
-            key={service._id}
-            service={service}
-            locale={locale}
-            id={index === 0 ? "services" : `service-${service._id}`}
-            index={index}
-            session={session}
-            variant="home"
-          />
-        ))}
+        {/* ── SERVICES (with filters and view options) ── */}
+        <ServicesListing services={list} locale={locale} session={session} />
 
         {/* ── ABOUT US ── */}
         <AboutSection />
