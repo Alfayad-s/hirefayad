@@ -4,11 +4,10 @@ import { signOut } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
-import { LogIn, UserPlus, LogOut, Menu, X, Zap, ChevronDown, Sun, Moon, CircleDollarSign, Globe, MoreVertical, FileText } from "lucide-react";
+import { LogIn, UserPlus, LogOut, Menu, X, Zap, ChevronDown, CircleDollarSign, Globe, MoreVertical, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { useCurrency } from "@/components/providers/currency-provider";
-import { useTheme } from "@/components/providers/theme-provider";
 import { useAuthModal } from "@/components/providers/auth-modal-provider";
 import { SUPPORTED_CURRENCIES } from "@/lib/currency";
 import type { Session } from "next-auth";
@@ -23,7 +22,6 @@ const SCROLL_THRESHOLD = 120;
 export function PublicHeader({ showBack = false, session = null }: PublicHeaderProps) {
   const t = useTranslations("Header");
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
   const { open: openAuthModal } = useAuthModal();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -161,17 +159,6 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
                   </button>
                 </>
               )}
-              <div className="h-4 w-px shrink-0 self-center bg-border" aria-hidden />
-              <div className="flex h-9 items-center justify-center">
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="flex size-9 items-center justify-center rounded-full border border-border bg-secondary/80 text-muted-foreground hover:text-foreground transition-all duration-200 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:text-white"
-                  aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                >
-                  {theme === "dark" ? <Sun className="size-4 shrink-0" /> : <Moon className="size-4 shrink-0" />}
-                </button>
-              </div>
             </nav>
 
             {/* Mobile: currency + locale + hamburger + theme */}
@@ -184,14 +171,6 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
                 aria-label="Toggle menu"
               >
                 {menuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
-              </button>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-secondary/80 text-muted-foreground hover:text-foreground transition-all dark:border-zinc-700 dark:bg-zinc-900/50 dark:hover:text-white sm:size-9"
-                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
               </button>
             </div>
           </div>

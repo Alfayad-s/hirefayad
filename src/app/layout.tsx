@@ -27,7 +27,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var d=document.documentElement;var t=localStorage.getItem('serviceFunnel_theme');if(t==='light'){d.classList.add('light');}else if(t==='dark'){d.classList.add('dark');}else if(window.matchMedia('(prefers-color-scheme:dark)').matches){d.classList.add('dark');}else{d.classList.add('light');}})();`,
+            __html: `(function(){document.documentElement.classList.add('dark');})();`,
           }}
         />
       </head>
