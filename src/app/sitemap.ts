@@ -4,7 +4,7 @@ import { routing } from "@/i18n/routing";
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "https://hirefayad.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const locales = routing.locales as string[];
+  const locales = [...routing.locales];
   const baseEntries: MetadataRoute.Sitemap = locales.map((locale) => ({
     url: `${siteUrl}/${locale}`,
     lastModified: new Date(),
