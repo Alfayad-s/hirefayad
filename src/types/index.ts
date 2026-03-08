@@ -95,6 +95,10 @@ export interface Coupon {
   usedCount: number;
   isActive: boolean;
   createdAt?: Date;
+  /** When true, show this coupon in the top marquee on the site */
+  showInMarquee?: boolean;
+  /** When set, coupon applies only to these service IDs; when empty/undefined, applies to all services */
+  serviceIds?: string[];
 }
 
 export interface OrderItemAddOn {

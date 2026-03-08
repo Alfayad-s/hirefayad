@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FileText, RefreshCw } from "lucide-react";
+import { FileText, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Order, OrderStatus } from "@/types";
 
@@ -50,6 +50,7 @@ export function AdminOrdersTable({ locale }: { locale: string }) {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const base = `/${locale}/admin`;
 
@@ -72,6 +73,29 @@ export function AdminOrdersTable({ locale }: { locale: string }) {
   useEffect(() => {
     fetchOrders();
   }, [statusFilter]);
+
+  const handleRemoveAllOrders = async () => {
+    if (total === 0) return;
+    const confirmed = window.confirm(
+      `Are you sure you want to remove all ${total} order(s) from the database? This cannot be undone.`
+    );
+    if (!confirmed) return;
+    setDeletingAll(true);
+    try {
+      const res = await fetch("/api/admin/orders/delete-all", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setOrders([]);
+        setTotal(0);
+      } else {
+        alert(data.error ?? "Failed to remove orders");
+      }
+    } catch {
+      alert("Failed to remove orders");
+    } finally {
+      setDeletingAll(false);
+    }
+  };
 
   if (loading && orders.length === 0) {
     return (
@@ -109,6 +133,17 @@ export function AdminOrdersTable({ locale }: { locale: string }) {
           Refresh
         </Button>
         <span className="text-sm text-muted-foreground">{total} order(s)</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRemoveAllOrders}
+          disabled={loading || deletingAll || total === 0}
+          className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          title="Remove all orders from the database (for cleaning)"
+        >
+          <Trash2 className={deletingAll ? "size-4 animate-pulse" : "size-4"} />
+          Remove all orders
+        </Button>
       </div>
       <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-left text-sm">

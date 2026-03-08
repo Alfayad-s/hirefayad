@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 /** Validate a coupon without incrementing usedCount. Use for quote page "Apply" preview. */
 export async function POST(request: Request) {
-  let body: { code?: string };
+  let body: { code?: string; serviceIds?: string[] };
   try {
     body = await request.json();
   } catch {
@@ -19,6 +19,8 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+
+  const orderServiceIds = Array.isArray(body?.serviceIds) ? body.serviceIds : [];
 
   try {
     const col = await getCouponsCollection();
@@ -40,6 +42,16 @@ export async function POST(request: Request) {
         valid: false,
         error: "Coupon usage limit reached",
       });
+    }
+    const couponServiceIds = (coupon as { serviceIds?: string[] }).serviceIds;
+    if (couponServiceIds && couponServiceIds.length > 0) {
+      const applies = orderServiceIds.some((id) => couponServiceIds.includes(id));
+      if (!applies) {
+        return NextResponse.json({
+          valid: false,
+          error: "This coupon does not apply to the selected services",
+        });
+      }
     }
 
     return NextResponse.json({

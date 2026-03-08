@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { ServiceSection } from "@/components/home/service-section";
 import { ServiceCardCompact } from "@/components/services/service-card-compact";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,21 @@ import { LayoutList, LayoutGrid, LayoutTemplate, Search } from "lucide-react";
 import type { Service } from "@/types";
 import type { Session } from "next-auth";
 
+const VIEW_STORAGE_KEY = "hirefayad_services_view";
+
 export type ViewType = "detailed" | "card" | "grid";
 export type SortOption = "default" | "name" | "price-low" | "price-high";
+
+function getStoredView(): ViewType {
+  if (typeof window === "undefined") return "detailed";
+  try {
+    const s = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (s === "detailed" || s === "card" || s === "grid") return s;
+  } catch {
+    /* ignore */
+  }
+  return "detailed";
+}
 
 type Props = {
   services: (Service & { _id: string })[];
@@ -58,6 +71,20 @@ export function ServicesListing({ services, locale, session }: Props) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("default");
 
+  // Apply stored view preference after mount to avoid hydration mismatch (server has no localStorage)
+  useEffect(() => {
+    setView(getStoredView());
+  }, []);
+
+  const setViewAndPersist = useCallback((v: ViewType) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, v);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const filtered = useMemo(
     () => sortServices(filterServices(services, search), sort),
     [services, search, sort]
@@ -96,7 +123,7 @@ export function ServicesListing({ services, locale, session }: Props) {
               variant={view === "detailed" ? "secondary" : "ghost"}
               size="sm"
               className="gap-1.5"
-              onClick={() => setView("detailed")}
+              onClick={() => setViewAndPersist("detailed")}
               title="Detailed view"
               aria-pressed={view === "detailed"}
             >
@@ -108,7 +135,7 @@ export function ServicesListing({ services, locale, session }: Props) {
               variant={view === "card" ? "secondary" : "ghost"}
               size="sm"
               className="gap-1.5"
-              onClick={() => setView("card")}
+              onClick={() => setViewAndPersist("card")}
               title="Card view"
               aria-pressed={view === "card"}
             >
@@ -120,7 +147,7 @@ export function ServicesListing({ services, locale, session }: Props) {
               variant={view === "grid" ? "secondary" : "ghost"}
               size="sm"
               className="gap-1.5"
-              onClick={() => setView("grid")}
+              onClick={() => setViewAndPersist("grid")}
               title="Grid view"
               aria-pressed={view === "grid"}
             >

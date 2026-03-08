@@ -113,6 +113,17 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
+      const couponServiceIds = (coupon as { serviceIds?: string[] }).serviceIds;
+      if (couponServiceIds && couponServiceIds.length > 0) {
+        const orderServiceIds = items.map((i) => i.serviceId);
+        const applies = orderServiceIds.some((id) => couponServiceIds.includes(id));
+        if (!applies) {
+          return NextResponse.json(
+            { error: "This coupon does not apply to the selected services" },
+            { status: 400 }
+          );
+        }
+      }
       discountPercentage = coupon.discountPercentage;
       couponId = coupon._id.toString();
       await couponsCol.updateOne(
@@ -146,6 +157,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       orderId: result.insertedId.toString(),
+      viewToken,
       message: "Quote requested successfully",
       totalAmountInr,
     });

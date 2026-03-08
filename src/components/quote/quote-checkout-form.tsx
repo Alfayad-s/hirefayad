@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { quoteRequestSchema, type QuoteRequestInput } from "@/lib/validations/quote";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Plus, Ticket, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Minus, Plus, Ticket, Trash2 } from "lucide-react";
 import { LocaleLink } from "@/components/layout/locale-link";
 import { usePrice } from "@/hooks/use-price";
 import type { Service } from "@/types";
@@ -152,11 +152,13 @@ export function QuoteCheckoutForm({
     services.find((s) => s._id === primaryServiceId) ?? services[0] ?? null;
 
   useEffect(() => {
-    fetch("/api/coupons/available")
+    const ids = (watch("items") ?? []).map((i: { serviceId?: string }) => i.serviceId).filter(Boolean) as string[];
+    const params = ids.length > 0 ? `?serviceIds=${ids.join(",")}` : "";
+    fetch(`/api/coupons/available${params}`)
       .then((res) => res.json())
       .then((data) => setAvailableCoupons(data.coupons ?? []))
       .catch(() => setAvailableCoupons([]));
-  }, []);
+  }, [items]);
 
   const subtotalInr = items.reduce((sum, item) => {
     const svc = services.find((s) => s._id === item.serviceId);
@@ -206,11 +208,12 @@ export function QuoteCheckoutForm({
     if (!code) return;
     setValidateError(null);
     setCouponLoading(true);
+    const serviceIds = (watch("items") ?? []).map((i: { serviceId?: string }) => i.serviceId).filter(Boolean) as string[];
     try {
       const res = await fetch("/api/validate-coupon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, serviceIds }),
       });
       const data = await res.json();
       if (data.valid && data.code) {
@@ -233,11 +236,12 @@ export function QuoteCheckoutForm({
     setValidateError(null);
     setCouponLoading(true);
     setValue("couponCode", coupon.code);
+    const serviceIds = (watch("items") ?? []).map((i: { serviceId?: string }) => i.serviceId).filter(Boolean) as string[];
     try {
       const res = await fetch("/api/validate-coupon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: coupon.code }),
+        body: JSON.stringify({ code: coupon.code, serviceIds }),
       });
       const data = await res.json();
       if (data.valid && data.code) {
@@ -288,7 +292,12 @@ export function QuoteCheckoutForm({
         setError(json.error ?? "Something went wrong");
         return;
       }
-      router.push(`/${locale}/quote/success`);
+      const viewToken = json.viewToken;
+      if (viewToken) {
+        router.push(`/${locale}/quote/success?viewToken=${encodeURIComponent(viewToken)}`);
+      } else {
+        router.push(`/${locale}/quote/success`);
+      }
       router.refresh();
     } catch {
       setError("Something went wrong");
@@ -521,19 +530,40 @@ export function QuoteCheckoutForm({
                                   {formatInr(addon.price)}
                                 </div>
                                 {isSelected && (
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    className="mt-1 w-16 rounded border border-input bg-background px-1.5 py-0.5 text-[11px]"
-                                    value={current?.quantity ?? 1}
-                                    onChange={(e) =>
-                                      updateAddOnQty(
-                                        addon.name,
-                                        addon.price,
-                                        Number(e.target.value || 1)
-                                      )
-                                    }
-                                  />
+                                  <div className="mt-1.5 flex items-center rounded-lg border border-input bg-muted/30 overflow-hidden">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        updateAddOnQty(
+                                          addon.name,
+                                          addon.price,
+                                          Math.max(1, (current?.quantity ?? 1) - 1)
+                                        )
+                                      }
+                                      disabled={(current?.quantity ?? 1) <= 1}
+                                      className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+                                      aria-label="Decrease quantity"
+                                    >
+                                      <Minus className="size-4" />
+                                    </button>
+                                    <span className="min-w-[2rem] px-2 py-1 text-center text-sm font-medium tabular-nums">
+                                      {current?.quantity ?? 1}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        updateAddOnQty(
+                                          addon.name,
+                                          addon.price,
+                                          (current?.quantity ?? 1) + 1
+                                        )
+                                      }
+                                      className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                      aria-label="Increase quantity"
+                                    >
+                                      <Plus className="size-4" />
+                                    </button>
+                                  </div>
                                 )}
                               </div>
                             </div>

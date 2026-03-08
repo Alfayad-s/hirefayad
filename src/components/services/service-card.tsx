@@ -52,7 +52,7 @@ export function ServiceCard({ service, locale }: ServiceCardProps) {
       </CardContent>
       <CardFooter className="flex gap-2">
         <Button variant="outline" size="sm" asChild>
-          <LocaleLink href="/#contact" locale={locale}>{t("getQuote")}</LocaleLink>
+          <LocaleLink href={`/quote?serviceId=${service._id}&tier=pro`} locale={locale}>{t("getQuote")}</LocaleLink>
         </Button>
         <Button size="sm" asChild>
           <LocaleLink href="/signup" locale={locale}>{t("applyCoupon")}</LocaleLink>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,12 +23,16 @@ import {
   RefreshCw,
   Lock,
   Zap,
+  Megaphone,
+  Package,
 } from "lucide-react";
 
 type CouponForForm = Omit<Coupon, "usedCount" | "createdAt"> & {
   expiryDate: string;
   _id?: string;
 };
+
+type ServiceOption = { _id: string; title: string };
 
 type Props = {
   locale: string;
@@ -46,7 +50,15 @@ export function AdminCouponForm({ locale, coupon }: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [services, setServices] = useState<ServiceOption[]>([]);
   const isEdit = !!coupon;
+
+  useEffect(() => {
+    fetch("/api/admin/services")
+      .then((res) => res.json())
+      .then((data) => setServices(Array.isArray(data) ? data : []))
+      .catch(() => setServices([]));
+  }, []);
 
   const toDatetimeLocal = (d: Date | string) => {
     const date = typeof d === "string" ? new Date(d) : d;
@@ -69,6 +81,8 @@ export function AdminCouponForm({ locale, coupon }: Props) {
           expiryDate: coupon.expiryDate.slice(0, 16),
           usageLimit: coupon.usageLimit,
           isActive: coupon.isActive,
+          showInMarquee: coupon.showInMarquee ?? false,
+          serviceIds: coupon.serviceIds ?? [],
         }
       : {
           code: "",
@@ -76,10 +90,14 @@ export function AdminCouponForm({ locale, coupon }: Props) {
           expiryDate: toDatetimeLocal(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
           usageLimit: 100,
           isActive: true,
+          showInMarquee: false,
+          serviceIds: [],
         },
   });
 
   const isActive = watch("isActive");
+  const showInMarquee = watch("showInMarquee");
+  const serviceIds = watch("serviceIds") ?? [];
   const watchedDiscount = watch("discountPercentage");
   const watchedCode = watch("code");
   const watchedLimit = watch("usageLimit");
@@ -89,9 +107,18 @@ export function AdminCouponForm({ locale, coupon }: Props) {
     ? Math.ceil((new Date(watchedExpiry).getTime() - Date.now()) / 86400000)
     : null;
 
+  const toggleServiceId = (id: string) => {
+    const next = serviceIds.includes(id) ? serviceIds.filter((s) => s !== id) : [...serviceIds, id];
+    setValue("serviceIds", next);
+  };
+
   async function onSubmit(data: CouponInput & { expiryDate: string }) {
     setError(null);
-    const payload = { ...data, expiryDate: new Date(data.expiryDate).toISOString() };
+    const payload = {
+      ...data,
+      expiryDate: new Date(data.expiryDate).toISOString(),
+      serviceIds: data.serviceIds ?? [],
+    };
     const url = isEdit ? `/api/admin/coupons/${coupon!._id}` : "/api/admin/coupons";
     const method = isEdit ? "PUT" : "POST";
     const res = await fetch(url, {
@@ -669,6 +696,77 @@ export function AdminCouponForm({ locale, coupon }: Props) {
               </div>
             </div>
           </div>
+
+          {/* Show in marquee */}
+          <div
+            className="acf-toggle-row"
+            onClick={() => setValue("showInMarquee", !showInMarquee)}
+            style={{ marginBottom: 14 }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 9,
+                background: showInMarquee ? "rgba(234,179,8,0.2)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${showInMarquee ? "rgba(234,179,8,0.4)" : "rgba(255,255,255,0.08)"}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.2s", flexShrink: 0,
+              }}>
+                <Megaphone size={16} strokeWidth={1.75} color={showInMarquee ? "#eab308" : "rgba(255,255,255,0.3)"} />
+              </div>
+              <div className="acf-toggle-info">
+                <span className="acf-toggle-title">Show in top marquee</span>
+                <span className="acf-toggle-desc">
+                  When enabled, this coupon appears in the yellow marquee banner on the site so users know it exists.
+                </span>
+              </div>
+            </div>
+            <div>
+              <input type="checkbox" style={{ display: "none" }} {...register("showInMarquee")} />
+              {showInMarquee
+                ? <ToggleRight size={32} color="#eab308" strokeWidth={1.75} />
+                : <ToggleLeft size={32} color="rgba(255,255,255,0.2)" strokeWidth={1.75} />
+              }
+            </div>
+          </div>
+
+          {/* Apply to services */}
+          {services.length > 0 && (
+            <div className="acf-section" style={{ marginBottom: 14 }}>
+              <div className="acf-section-header">
+                <div className="acf-section-icon">
+                  <Package size={14} color="#818cf8" strokeWidth={2} />
+                </div>
+                <span className="acf-section-title">Apply to services</span>
+              </div>
+              <div className="acf-section-body">
+                <p className="acf-sublabel" style={{ marginBottom: 10 }}>
+                  Leave all unchecked for “all services”. Or select specific services this coupon applies to.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {services.map((s) => (
+                    <label
+                      key={s._id}
+                      className="acf-quick-pill"
+                      style={{
+                        cursor: "pointer",
+                        borderColor: serviceIds.includes(s._id) ? "rgba(99,102,241,0.5)" : undefined,
+                        background: serviceIds.includes(s._id) ? "rgba(99,102,241,0.12)" : undefined,
+                        color: serviceIds.includes(s._id) ? "#a5b4fc" : undefined,
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        style={{ display: "none" }}
+                        checked={serviceIds.includes(s._id)}
+                        onChange={() => toggleServiceId(s._id)}
+                      />
+                      {s.title}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Status toggle */}
           <div

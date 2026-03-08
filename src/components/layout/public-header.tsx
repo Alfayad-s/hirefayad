@@ -21,6 +21,7 @@ const SCROLL_THRESHOLD = 120;
 
 export function PublicHeader({ showBack = false, session = null }: PublicHeaderProps) {
   const t = useTranslations("Header");
+  const tQuote = useTranslations("Quote");
   const pathname = usePathname();
   const { open: openAuthModal } = useAuthModal();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -125,6 +126,9 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
               <div className="flex h-9 items-center">
                 <LocaleSwitcher />
               </div>
+              <div className="flex h-9 items-center">
+                <QuotesDropdown session={session} />
+              </div>
               <div className="h-4 w-px shrink-0 self-center bg-border" aria-hidden />
               {session?.user ? (
                 <UserMenu
@@ -191,6 +195,14 @@ export function PublicHeader({ showBack = false, session = null }: PublicHeaderP
           <div className="h-0.5 w-full bg-gradient-to-r from-yellow-500 via-yellow-400 to-transparent dark:from-yellow-400 dark:via-yellow-300" />
 
           <div className="p-4">
+            <Link
+              href="/quote"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              <FileText className="size-4" />
+              {tQuote("title")}
+            </Link>
             {session?.user ? (
               <div className="flex flex-col gap-3">
                 <Link
@@ -318,6 +330,67 @@ function UserMenu({
             <LogOut className="size-4 shrink-0" />
             {t("signOut")}
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QuotesDropdown({ session }: { session: Session | null }) {
+  const tHeader = useTranslations("Header");
+  const tQuote = useTranslations("Quote");
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative min-w-0 shrink">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-full border border-border bg-secondary/80 px-3 py-2 text-left text-sm font-medium text-foreground transition-colors hover:bg-muted dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-300 dark:hover:text-white sm:gap-2 sm:px-4"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="Quotes menu"
+      >
+        <FileText className="size-3.5 shrink-0 sm:size-4" />
+        <span className="truncate">{tHeader("quotes")}</span>
+        <ChevronDown className={`size-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full z-50 mt-1.5 min-w-[11rem] overflow-hidden rounded-xl border border-border bg-card shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+          role="menu"
+        >
+          <Link
+            href="/quote"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
+            role="menuitem"
+          >
+            <FileText className="size-4 shrink-0" />
+            {tQuote("title")}
+          </Link>
+          {session?.user && (
+            <Link
+              href="/orders"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors dark:text-zinc-300 dark:hover:bg-zinc-800"
+              role="menuitem"
+            >
+              <FileText className="size-4 shrink-0" />
+              {tHeader("quotes")}
+            </Link>
+          )}
         </div>
       )}
     </div>

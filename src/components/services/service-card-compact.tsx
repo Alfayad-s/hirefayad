@@ -40,13 +40,13 @@ export function ServiceCardCompact({ service, locale }: ServiceCardCompactProps)
       </CardHeader>
       <CardFooter className="mt-auto flex gap-2">
         <Button variant="outline" size="sm" className="gap-1" asChild>
-          <LocaleLink href="/#contact" locale={locale}>
+          <LocaleLink href={`/quote?serviceId=${service._id}&tier=pro`} locale={locale}>
             {t("getQuote")}
             <ArrowRight className="size-3.5" />
           </LocaleLink>
         </Button>
         <Button size="sm" variant="ghost" asChild>
-          <LocaleLink href={`/${locale}/services/${service._id}`} locale={locale}>
+          <LocaleLink href={`/services/${service._id}`} locale={locale}>
             View details
           </LocaleLink>
         </Button>

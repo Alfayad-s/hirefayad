@@ -105,6 +105,8 @@ export const couponSchema = z.object({
   expiryDate: z.union([z.string(), z.coerce.date()]),
   usageLimit: z.number().int().min(0),
   isActive: z.boolean().default(true),
+  showInMarquee: z.boolean().optional().default(false),
+  serviceIds: z.array(z.string().min(1)).optional().default([]),
 });
 
 export type ServiceInput = z.infer<typeof serviceSchema>;

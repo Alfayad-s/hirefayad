@@ -2,14 +2,17 @@ import { setRequestLocale } from "next-intl/server";
 import { PublicHeader } from "@/components/layout/public-header";
 import { auth } from "@/auth";
 import { CheckCircle2 } from "lucide-react";
-import { LocaleLink } from "@/components/layout/locale-link";
-import { Button } from "@/components/ui/button";
+import { QuoteSuccessActions } from "@/components/quote/quote-success-actions";
 import { getServerT } from "@/lib/server-translations";
 
-type Props = { params: Promise<{ locale: string }> };
+type Props = {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ viewToken?: string }>;
+};
 
-export default async function QuoteSuccessPage({ params }: Props) {
+export default async function QuoteSuccessPage({ params, searchParams }: Props) {
   const { locale } = await params;
+  const { viewToken } = await searchParams;
   setRequestLocale(locale);
   const session = await auth();
   const t = await getServerT(locale, "Quote");
@@ -23,11 +26,7 @@ export default async function QuoteSuccessPage({ params }: Props) {
         </div>
         <h1 className="mt-6 text-2xl font-bold text-foreground">{t("successTitle")}</h1>
         <p className="mt-2 text-muted-foreground">{t("successMessage")}</p>
-        <Button asChild className="mt-8 rounded-full bg-yellow-400 font-bold text-black hover:bg-yellow-300">
-          <LocaleLink href="/" locale={locale}>
-            Back to home
-          </LocaleLink>
-        </Button>
+        <QuoteSuccessActions locale={locale} viewToken={viewToken ?? null} />
       </main>
     </div>
   );
