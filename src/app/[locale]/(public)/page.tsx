@@ -40,10 +40,10 @@ export default async function HomePage({ params }: Props) {
         {/* ── HERO ── (100vh so content has space from header) */}
         <section
           id="hero"
-          className="relative min-h-[100dvh] flex flex-col items-center justify-center overflow-hidden px-4 py-16 md:py-20"
+          className="relative min-h-[100dvh] flex flex-col items-center justify-center overflow-hidden px-4 py-16 pb-24 md:py-20 md:pb-20"
         >
-          {/* Floating decorative squares */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {/* Floating decorative squares - hidden on small screens */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden hidden sm:block">
             <div
               className="absolute -left-8 top-1/4 h-32 w-32 border border-yellow-500/20"
               style={{ animation: "float 8s ease-in-out infinite", ["--float-rotate" as string]: "12deg" }}
@@ -58,16 +58,16 @@ export default async function HomePage({ params }: Props) {
             />
           </div>
 
-          <div className="relative mx-auto max-w-4xl text-center">
+          <div className="relative z-10 mx-auto max-w-4xl text-center">
             {/* Badge */}
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/5 px-5 py-2 text-sm font-medium text-yellow-400 backdrop-blur-sm">
+            <div className="mb-6 sm:mb-8 inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/5 px-5 py-2 text-sm font-medium text-yellow-400 backdrop-blur-sm">
               <Sparkles className="size-3.5" />
               {userName ? t("welcomeBack") : t("badge")}
             </div>
 
             {/* Headline */}
             <h1
-              className="text-5xl font-black tracking-tighter text-foreground sm:text-6xl md:text-7xl lg:text-8xl"
+              className="text-4xl font-black tracking-tighter text-foreground sm:text-5xl sm:text-6xl md:text-7xl lg:text-8xl"
               style={{ fontFamily: "'Geist', 'DM Sans', sans-serif", lineHeight: 1.05 }}
             >
               {userName ? (
@@ -98,12 +98,12 @@ export default async function HomePage({ params }: Props) {
               )}
             </h1>
 
-            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+            <p className="mx-auto mt-6 sm:mt-8 max-w-2xl text-base sm:text-lg leading-relaxed text-muted-foreground px-0">
               {userName ? t("welcomeQuote") : t("description")}
             </p>
 
             {/* CTAs */}
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-4">
+            <div className="mt-8 sm:mt-12 flex flex-wrap items-center justify-center gap-4">
               {userName ? (
                 <Button
                   size="lg"
@@ -125,11 +125,13 @@ export default async function HomePage({ params }: Props) {
           </div>
 
           {list.length > 0 && (
-            <ScrollToSection href="#services" label={t("seeServices")} />
+            <div className="relative z-10 mt-6 sm:mt-0">
+              <ScrollToSection href="#services" label={t("seeServices")} />
+            </div>
           )}
 
-          {/* Hero character image - bottom right with spacing and soft bottom shadow */}
-          <div className="pointer-events-none absolute bottom-0 right-0 z-10 flex items-end justify-end pr-8 pb-6 md:pr-16 md:pb-10">
+          {/* Hero character - hidden on mobile to avoid overlapping text; visible from md up */}
+          <div className="pointer-events-none absolute bottom-0 right-0 z-0 hidden md:flex items-end justify-end pr-8 pb-6 lg:pr-16 lg:pb-10">
             <div className="relative">
               <Image
                 src="/image.png"
